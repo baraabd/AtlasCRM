@@ -4,13 +4,16 @@ import {
   ExceptionFilter,
   HttpStatus,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 @Catch(PrismaClientKnownRequestError)
 export class PrismaExceptionFilter implements ExceptionFilter {
   catch(exception: PrismaClientKnownRequestError, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
-    const response = ctx.getResponse();
+
+    // Cast response to Express Response to avoid `any`
+    const response = ctx.getResponse<Response>();
 
     let statusCode = HttpStatus.BAD_REQUEST;
     let message = 'Database error';

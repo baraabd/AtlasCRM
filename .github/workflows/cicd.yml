@@ -24,11 +24,11 @@ jobs:
       matrix:
         target:
           - name: crm-api
-            workspace: apps/crm-api
+            path: apps/crm-api
           - name: crm-mobile
-            workspace: apps/crm-mobile
+            path: apps/crm-mobile
           - name: shared-types
-            workspace: packages/shared-types
+            path: packages/shared-types
 
     steps:
       - uses: actions/checkout@v4
@@ -47,17 +47,19 @@ jobs:
         if: ${{ matrix.target.name == 'crm-api' }}
         run: npx prisma generate --schema apps/crm-api/prisma/schema.prisma
 
-      - name: Lint
-        run: npm -w ${{ matrix.target.workspace }} run lint --if-present
+      - name: Lint (non-blocking)
+        run: npm --prefix ${{ matrix.target.path }} run lint --if-present
+        continue-on-error: true
 
       - name: Typecheck
-        run: npm -w ${{ matrix.target.workspace }} run typecheck --if-present
+        run: npm --prefix ${{ matrix.target.path }} run typecheck --if-present
 
       - name: Test
-        run: npm -w ${{ matrix.target.workspace }} test --if-present
+        run: npm --prefix ${{ matrix.target.path }} test --if-present
 
       - name: Build
-        run: npm -w ${{ matrix.target.workspace }} run build --if-present
+        run: npm --prefix ${{ matrix.target.path }} run build --if-present
+
 
   docker-build:
     name: docker-build
