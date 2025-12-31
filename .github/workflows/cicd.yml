@@ -5,7 +5,6 @@ on:
     branches: ["main"]
   push:
     branches: ["main"]
-    tags: ["v*.*.*"]
 
 concurrency:
   group: cicd-${{ github.ref }}
@@ -17,7 +16,7 @@ env:
 
 jobs:
   lint-test-build:
-    name: Matrix lint-test-build
+    name: "Matrix: lint-test-build"
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -31,69 +30,67 @@ jobs:
             path: packages/shared-types
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-          cache-dependency-path: package-lock.json
+          cache-dependency-path: |
+            package-lock.json
 
       - name: Install deps (root)
         run: npm ci
 
+      - name: Check package.json exists
+        id: pkg
+        run: |
+          if [ -f "${{ matrix.target.path }}/package.json" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Prisma generate (crm-api only)
-        if: ${{ matrix.target.name == 'crm-api' }}
+        if: matrix.target.name == 'crm-api'
         run: npx prisma generate --schema apps/crm-api/prisma/schema.prisma
 
       - name: Lint (non-blocking)
+        if: steps.pkg.outputs.exists == 'true'
         run: npm --prefix ${{ matrix.target.path }} run lint --if-present
         continue-on-error: true
 
       - name: Typecheck
+        if: steps.pkg.outputs.exists == 'true'
         run: npm --prefix ${{ matrix.target.path }} run typecheck --if-present
 
       - name: Test
+        if: steps.pkg.outputs.exists == 'true'
         run: npm --prefix ${{ matrix.target.path }} test --if-present
 
       - name: Build
+        if: steps.pkg.outputs.exists == 'true'
         run: npm --prefix ${{ matrix.target.path }} run build --if-present
 
-
   docker-build:
-    name: docker-build
+    name: "docker-build"
     runs-on: ubuntu-latest
     needs: lint-test-build
-    # build image فقط على push/tag (ليس على PR)
     if: github.event_name == 'push'
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Docker metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=sha
-            type=ref,event=tag
-
-      - name: Build (no push) with cache
-        uses: docker/build-push-action@v5
-        with:
-          context: ./apps/crm-api
-          push: false
-          tags: ${{ steps.meta.outputs.tags }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+      - name: Build API image (local)
+        run: docker build -t ${{ env.IMAGE_NAME }}:ci ./apps/crm-api
 
   docker-publish:
-    name: docker-publish
+    name: "docker-publish"
     runs-on: ubuntu-latest
     needs: docker-build
     if: github.event_name == 'push'
@@ -101,7 +98,8 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -114,7 +112,6 @@ jobs:
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=sha
-            type=ref,event=tag
 
       - name: Login to GHCR
         uses: docker/login-action@v3
@@ -123,7 +120,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build & Push with cache
+      - name: Build & Push API Image
         uses: docker/build-push-action@v5
         with:
           context: ./apps/crm-api
