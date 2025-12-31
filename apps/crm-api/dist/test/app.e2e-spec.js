@@ -8,14 +8,14 @@ const supertest_1 = __importDefault(require("supertest"));
 const app_module_1 = require("./../src/app.module");
 describe('AppController (e2e)', () => {
     let app;
-    beforeEach(async () => {
+    beforeAll(async () => {
         const moduleFixture = await testing_1.Test.createTestingModule({
             imports: [app_module_1.AppModule],
         }).compile();
         app = moduleFixture.createNestApplication();
         await app.init();
     });
-    afterEach(async () => {
+    afterAll(async () => {
         await app.close();
     });
     it('/ (GET)', () => {

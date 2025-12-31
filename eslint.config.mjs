@@ -15,12 +15,20 @@ export default [
       '**/.expo/**',
       '**/android/**',
       '**/ios/**',
-       // Prisma generated (do not lint)
+
+      // ignore other eslint configs
+      '**/apps/**/eslint.config.*',
+
+      // Prisma generated (do not lint)
       '**/apps/crm-api/generated/**',
       '**/apps/crm-api/prisma/**/.prisma/**',
-      '**/apps/crm-api/node_modules/**'
+
+      // Do not auto-fix tests in API (prevents "no tests" accidents)
+      '**/apps/crm-api/**/*.spec.ts',
+      '**/apps/crm-api/**/*.e2e-spec.ts',
     ],
   },
+
   {
     files: ['**/*.{ts,tsx,js,jsx}'],
     languageOptions: {
@@ -43,7 +51,6 @@ export default [
     rules: {
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       '@typescript-eslint/consistent-type-imports': 'error',
-
       'import/order': [
         'error',
         {
@@ -51,12 +58,18 @@ export default [
           alphabetize: { order: 'asc', caseInsensitive: true },
         },
       ],
-
       'react/react-in-jsx-scope': 'off',
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
-
       'react-native/no-inline-styles': 'warn',
+    },
+  },
+
+  // NestJS API override — prevent breaking DI with type-only imports
+  {
+    files: ['apps/crm-api/**/*.{ts,js}'],
+    rules: {
+      '@typescript-eslint/consistent-type-imports': 'off',
     },
   },
 ];
