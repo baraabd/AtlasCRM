@@ -1,41 +1,17 @@
-import {
-  ArgumentsHost,
-  Catch,
-  ExceptionFilter,
-  HttpStatus,
-} from '@nestjs/common';
-import { Response } from 'express';
+import type { ArgumentsHost, ExceptionFilter } from '@nestjs/common';
+import { Catch, HttpStatus } from '@nestjs/common';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import type { Response } from 'express';
 
 @Catch(PrismaClientKnownRequestError)
 export class PrismaExceptionFilter implements ExceptionFilter {
   catch(exception: PrismaClientKnownRequestError, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
-
-    // Cast response to Express Response to avoid `any`
     const response = ctx.getResponse<Response>();
 
-    let statusCode = HttpStatus.BAD_REQUEST;
-    let message = 'Database error';
-
-    switch (exception.code) {
-      case 'P2002':
-        statusCode = HttpStatus.CONFLICT;
-        message = 'Unique constraint failed';
-        break;
-      case 'P2025':
-        statusCode = HttpStatus.NOT_FOUND;
-        message = 'Record not found';
-        break;
-      default:
-        message = exception.message;
-        break;
-    }
-
-    response.status(statusCode).json({
-      statusCode,
-      message,
-      code: exception.code,
+    response.status(HttpStatus.BAD_REQUEST).json({
+      statusCode: HttpStatus.BAD_REQUEST,
+      message: exception.message,
     });
   }
 }

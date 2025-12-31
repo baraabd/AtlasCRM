@@ -13,25 +13,9 @@ let PrismaExceptionFilter = class PrismaExceptionFilter {
     catch(exception, host) {
         const ctx = host.switchToHttp();
         const response = ctx.getResponse();
-        let statusCode = common_1.HttpStatus.BAD_REQUEST;
-        let message = 'Database error';
-        switch (exception.code) {
-            case 'P2002':
-                statusCode = common_1.HttpStatus.CONFLICT;
-                message = 'Unique constraint failed';
-                break;
-            case 'P2025':
-                statusCode = common_1.HttpStatus.NOT_FOUND;
-                message = 'Record not found';
-                break;
-            default:
-                message = exception.message;
-                break;
-        }
-        response.status(statusCode).json({
-            statusCode,
-            message,
-            code: exception.code,
+        response.status(common_1.HttpStatus.BAD_REQUEST).json({
+            statusCode: common_1.HttpStatus.BAD_REQUEST,
+            message: exception.message,
         });
     }
 };
