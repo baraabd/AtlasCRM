@@ -1,8 +1,8 @@
-# ---- deps ----
+# ---- deps (install all deps with cache) ----
 FROM node:20-alpine AS deps
 WORKDIR /repo
 
-# monorepo manifests
+# Copy only manifests first for better cache
 COPY package.json package-lock.json ./
 COPY apps/crm-api/package.json apps/crm-api/package.json
 COPY packages/shared-types/package.json packages/shared-types/package.json
@@ -13,25 +13,40 @@ RUN npm ci
 FROM node:20-alpine AS build
 WORKDIR /repo
 
+# Bring installed deps
 COPY --from=deps /repo/node_modules ./node_modules
+
+# Copy full repo
 COPY . .
 
-# prisma + build (workspace)
+# Prisma + build
 RUN npx prisma generate --schema apps/crm-api/prisma/schema.prisma
-RUN npm -w apps/crm-api run build
+RUN npm --prefix apps/crm-api run build
 
-# ---- runtime ----
+# ---- prod-deps (install only production deps) ----
+FROM node:20-alpine AS prod-deps
+WORKDIR /repo
+
+# manifests again (to compute prod deps correctly)
+COPY package.json package-lock.json ./
+COPY apps/crm-api/package.json apps/crm-api/package.json
+COPY packages/shared-types/package.json packages/shared-types/package.json
+
+# install prod only
+RUN npm ci --omit=dev
+
+# ---- runtime (minimal, non-root) ----
 FROM node:20-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 
-# copy built output
+# Run as non-root (best practice)
+USER node
+
+# Copy only what we need at runtime
+COPY --from=prod-deps /repo/node_modules ./node_modules
 COPY --from=build /repo/apps/crm-api/dist ./dist
 COPY --from=build /repo/apps/crm-api/package.json ./package.json
-
-# install only runtime deps for crm-api (includes local file dep resolution from monorepo build isn't needed at runtime)
-# simplest: keep prod node_modules from build workspace
-COPY --from=build /repo/apps/crm-api/node_modules ./node_modules
 
 EXPOSE 3000
 CMD ["node", "dist/main"]
