@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+
+      - name: Install dependencies (root)
+        run: npm ci
+
+      - name: Prisma generate (crm-api)
+        run: npx prisma generate --schema apps/crm-api/prisma/schema.prisma
+
+      - name: Lint (workspaces)
+        run: npm run lint
+
+      - name: Typecheck (workspaces)
+        run: npm run typecheck
+
+      - name: Test (workspaces)
+        run: npm run test
+
+      - name: Build (workspaces)
+        run: npm run build
+        
+  docker-publish-api:
+    needs: ci
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & Push API Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./apps/crm-api
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/atlascrm-api:latest
+            ghcr.io/${{ github.repository_owner }}/atlascrm-api:${{ github.sha }}

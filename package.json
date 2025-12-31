@@ -9,11 +9,11 @@
     "packages/*"
   ],
   "scripts": {
-    "lint": "npm run lint -ws",
-    "typecheck": "npm run typecheck -ws",
-    "test": "npm run test -ws",
-    "build": "npm run build -ws"
-  },
+  "lint": "npm -ws --if-present run lint",
+  "typecheck": "npm -ws --if-present run typecheck",
+  "test": "npm -ws --if-present run test",
+  "build": "npm -ws --if-present run build"
+},
   "dependencies": {
     "@reduxjs/toolkit": "^2.11.2",
     "expo-file-system": "^19.0.21",
