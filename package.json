@@ -1,0 +1,24 @@
+{
+  "name": "crm-mvp",
+  "private": true,
+  "engines": {
+    "node": ">=20.18.0"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "lint": "npm run lint -ws",
+    "typecheck": "npm run typecheck -ws",
+    "test": "npm run test -ws",
+    "build": "npm run build -ws"
+  },
+  "dependencies": {
+    "@reduxjs/toolkit": "^2.11.2",
+    "expo-file-system": "^19.0.21",
+    "expo-secure-store": "^15.0.8",
+    "expo-sqlite": "^16.0.10",
+    "react-redux": "^9.2.0"
+  }
+}
