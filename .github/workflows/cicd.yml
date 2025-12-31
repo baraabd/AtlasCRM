@@ -1,62 +1,118 @@
-name: CI
+name: CICD
 
 on:
-  push:
-    branches: [main]
   pull_request:
-    branches: [main]
+    branches: ["main"]
+  push:
+    branches: ["main"]
+    tags: ["v*.*.*"]
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: cicd-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  NODE_VERSION: "20"
+  IMAGE_NAME: atlascrm-api
+
 jobs:
-  ci:
+  lint-test-build:
+    name: Matrix lint-test-build
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - name: crm-api
+            workspace: apps/crm-api
+          - name: crm-mobile
+            workspace: apps/crm-mobile
+          - name: shared-types
+            workspace: packages/shared-types
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
-          cache-dependency-path: |
-            package-lock.json
+          cache-dependency-path: package-lock.json
 
-      - name: Install dependencies (root)
+      - name: Install deps (root)
         run: npm ci
 
-      - name: Prisma generate (crm-api)
+      - name: Prisma generate (crm-api only)
+        if: ${{ matrix.target.name == 'crm-api' }}
         run: npx prisma generate --schema apps/crm-api/prisma/schema.prisma
 
-      - name: Lint (workspaces)
-        run: npm run lint
+      - name: Lint
+        run: npm -w ${{ matrix.target.workspace }} run lint --if-present
 
-      - name: Typecheck (workspaces)
-        run: npm run typecheck
+      - name: Typecheck
+        run: npm -w ${{ matrix.target.workspace }} run typecheck --if-present
 
-      - name: Test (workspaces)
-        run: npm run test
+      - name: Test
+        run: npm -w ${{ matrix.target.workspace }} test --if-present
 
-      - name: Build (workspaces)
-        run: npm run build
-        
-  docker-publish-api:
-    needs: ci
+      - name: Build
+        run: npm -w ${{ matrix.target.workspace }} run build --if-present
+
+  docker-build:
+    name: docker-build
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-
+    needs: lint-test-build
+    # build image فقط على push/tag (ليس على PR)
+    if: github.event_name == 'push'
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha
+            type=ref,event=tag
+
+      - name: Build (no push) with cache
+        uses: docker/build-push-action@v5
+        with:
+          context: ./apps/crm-api
+          push: false
+          tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  docker-publish:
+    name: docker-publish
+    runs-on: ubuntu-latest
+    needs: docker-build
+    if: github.event_name == 'push'
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha
+            type=ref,event=tag
 
       - name: Login to GHCR
         uses: docker/login-action@v3
@@ -65,11 +121,11 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build & Push API Image
+      - name: Build & Push with cache
         uses: docker/build-push-action@v5
         with:
           context: ./apps/crm-api
           push: true
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/atlascrm-api:latest
-            ghcr.io/${{ github.repository_owner }}/atlascrm-api:${{ github.sha }}
+          tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
