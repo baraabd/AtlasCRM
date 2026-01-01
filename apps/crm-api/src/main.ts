@@ -1,3 +1,4 @@
+// main.ts
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
@@ -27,8 +28,13 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
 
-  await app.listen(3000);
-  console.log('Listening on', await app.getUrl());
+  const port = Number(process.env.API_PORT ?? 3000);
+
+  // IMPORTANT: bind to IPv4/all interfaces
+  await app.listen(port, '0.0.0.0');
+
+  console.log(`Listening on http://localhost:${port}`);
+  console.log(`Swagger on http://localhost:${port}/api`);
 }
 
 void bootstrap();

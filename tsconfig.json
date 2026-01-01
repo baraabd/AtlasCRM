@@ -1,7 +1,13 @@
 {
   "files": [],
   "references": [
-    { "path": "packages/shared-types" },
-    { "path": "apps/crm-api" }
-  ]
+    {
+      "path": "packages/shared-types"
+    },
+    {
+      "path": "apps/crm-api"
+    }
+  ],
+  "compilerOptions": {},
+  "extends": "expo/tsconfig.base"
 }
