@@ -1,8 +1,19 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-import type { RootStackParamList } from '../navigation/types';
+export type AppStackParamList = {
+  Dashboard: undefined;
+  Profile: undefined;
 
-export type ScreenProps<T extends keyof RootStackParamList> = NativeStackScreenProps<
-  RootStackParamList,
-  T
->;
+  SelectLead: undefined;
+  NewLead: { returnTo?: 'SelectLead' } | undefined;
+
+  StartVisitProof: { leadId: string };
+  VisitLive: { leadId: string; visitId: string };
+  EndVisit: { leadId: string; visitId: string };
+
+  CreateDeal: { leadId: string; visitId: string };
+  DealDetails: { dealId: string };
+};
+
+export type ScreenProps<T extends keyof AppStackParamList> =
+  NativeStackScreenProps<AppStackParamList, T>;

@@ -1,32 +1,26 @@
-/* import axios from 'axios';
+import axios from 'axios';
 import { Platform } from 'react-native';
 
-// ضع IP جهازك هنا أو من ENV (Expo public)
-const LAN_HOST = process.env.EXPO_PUBLIC_API_HOST || '192.168.1.56';
-const API_PORT = process.env.EXPO_PUBLIC_API_PORT || '3000';
-const USE_ANDROID_EMULATOR = process.env.EXPO_PUBLIC_USE_EMULATOR === 'true';
+// يفضّل ترك المنفذ ثابتاً إذا سيرفرك شغال على 3000
+const API_PORT = Number(process.env.EXPO_PUBLIC_API_PORT ?? 3000);
 
-const HOST =
-  Platform.OS === 'android' && USE_ANDROID_EMULATOR ? '10.0.2.2' : LAN_HOST;
-
-export const API_BASE_URL = `http://${HOST}:${API_PORT}`;
-
-export const api = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 15000,
-});
-
-export async function getHealth(): Promise<string> {
-  const res = await api.get<string>('/');
-  return typeof res.data === 'string' ? res.data : JSON.stringify(res.data);
-}
+/**
+ * EXPO_PUBLIC_API_HOST:
+ * - جهاز حقيقي: ضع IP جهاز الكمبيوتر على نفس الشبكة (مثال 192.168.1.56)
+ * - محاكي أندرويد: يمكن تركه فارغاً وسيستخدم 10.0.2.2 تلقائياً
  */
+const LAN_HOST = process.env.EXPO_PUBLIC_API_HOST?.trim();
 
-import axios from 'axios';
+// خيار إضافي إذا تريد إجبار استخدام المحاكي حتى لو وضعت LAN_HOST
+const USE_ANDROID_EMULATOR =
+  (process.env.EXPO_PUBLIC_USE_EMULATOR ?? 'false').toLowerCase() === 'true';
 
-export const API_BASE_URL = 'http://10.0.2.2:3000'; 
-// ⚠️ إذا جهاز حقيقي غيّرها إلى IP جهازك:
-// http://192.168.1.56:3000
+const host =
+  Platform.OS === 'android'
+    ? (USE_ANDROID_EMULATOR ? '10.0.2.2' : (LAN_HOST || '10.0.2.2'))
+    : (LAN_HOST || 'localhost');
+
+export const API_BASE_URL = `http://${host}:${API_PORT}`;
 
 export const api = axios.create({
   baseURL: API_BASE_URL,

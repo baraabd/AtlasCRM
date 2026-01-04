@@ -31,7 +31,8 @@ export function SelectLeadScreen({ navigation }: ScreenProps<'SelectLead'>) {
         disabled: !leads.selectedLeadId,
         onPress: () => {
           const leadId = leads.selectedLeadId!;
-          navigation.navigate('StartVisitProof', { leadId, source: 'list' });
+          navigation.navigate('StartVisitProof', { leadId });
+
         },
       }}
       secondary={{

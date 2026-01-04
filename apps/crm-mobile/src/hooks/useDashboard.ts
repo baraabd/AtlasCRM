@@ -23,6 +23,7 @@ export type UseDashboardResult = {
   offline: boolean;
   error: AppError | null;
   data: DashboardData | null;
+  message: string | null; 
 
   actions: {
     refresh: () => Promise<void>;
@@ -42,7 +43,7 @@ export function useDashboard(): UseDashboardResult {
       setState('loading');
       setError(null);
 
-      const apiHealth = await getHealth(); // اتصال حقيقي مع Nest "/"
+      const apiHealth = await getHealth(); 
       setMessage(apiHealth);
       setData({
         workTimerSec: 2 * 60 * 60 + 12 * 60,
@@ -61,5 +62,5 @@ export function useDashboard(): UseDashboardResult {
 
   const actions = useMemo(() => ({ refresh }), [refresh]);
 
-  return { state, offline, error, data, actions };
+  return { state, offline, error, data, actions, message };
 }
