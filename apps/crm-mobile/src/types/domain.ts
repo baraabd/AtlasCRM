@@ -3,6 +3,7 @@ export type ApprovalStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | null;
 
 export type LoadState = 'idle' | 'loading' | 'ready' | 'empty' | 'error' | 'offline';
 
+
 export type LatLng = { lat: number; lng: number };
 
 export type Lead = {
@@ -15,6 +16,7 @@ export type Lead = {
   lastVisitedAt?: string | null;
   hasOpenDeal?: boolean;
 };
+
 
 export type Deal = {
   id: string;
@@ -90,4 +92,25 @@ export type DealDraft = {
 export type DiscountPolicy = {
   agentMaxPct: number;
   allowOverride: boolean;
+};
+
+
+
+
+export type VisitOutcome = 'FOLLOW_UP' | 'WON' | 'LOST' | 'NO_ACTION';
+
+export type VisitPresented = {
+  serviceOverview: boolean;
+  pricingShown: boolean;
+  brochureGiven: boolean;
+};
+
+export type Visit = {
+  id: string;
+  leadId: string;
+  startedAt: string;
+  endedAt?: string | null;
+  durationSec?: number | null;
+  outcome?: VisitOutcome | null;
+  notes?: string | null;
 };

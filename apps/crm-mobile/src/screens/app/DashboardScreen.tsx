@@ -17,7 +17,7 @@ function formatSec(sec: number) {
 }
 
 export function DashboardScreen({ navigation }: ScreenProps<'Dashboard'>) {
-  const { state, offline, error, data, actions } = useDashboard();
+  const { state, offline, error, data, actions, message } = useDashboard();
 
   useEffect(() => {
     void actions.refresh();
@@ -44,6 +44,7 @@ export function DashboardScreen({ navigation }: ScreenProps<'Dashboard'>) {
           variant="error"
           text={error?.message ?? 'Failed to load'}
           action={{ label: 'Retry', onPress: actions.refresh }}
+          
         />
       </Screen>
     );
@@ -57,6 +58,8 @@ export function DashboardScreen({ navigation }: ScreenProps<'Dashboard'>) {
         <Text style={styles.h}>Work timer</Text>
         <Text style={styles.big}>{formatSec(data?.workTimerSec ?? 0)}</Text>
         <Text style={styles.sub}>API: {data?.apiHealth ?? '-'}</Text>
+        <Text style={styles.sub}>API: {message ?? data?.apiHealth ?? '-'}</Text>
+
       </Card>
 
       <Card>
