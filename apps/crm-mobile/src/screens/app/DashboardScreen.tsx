@@ -57,7 +57,6 @@ export function DashboardScreen({ navigation }: ScreenProps<'Dashboard'>) {
       <Card>
         <Text style={styles.h}>Work timer</Text>
         <Text style={styles.big}>{formatSec(data?.workTimerSec ?? 0)}</Text>
-        <Text style={styles.sub}>API: {data?.apiHealth ?? '-'}</Text>
         <Text style={styles.sub}>API: {message ?? data?.apiHealth ?? '-'}</Text>
 
       </Card>

@@ -10,10 +10,11 @@ export type Lead = {
   id: string;
   name: string;
   businessType?: string | null;
-  distanceM?: number | null;
   phones?: string[];
-  location?: LatLng | null;
+  distanceM?: number | null;
+  /* location?: LatLng | null;
   lastVisitedAt?: string | null;
+  hasOpenDeal?: boolean; */
   hasOpenDeal?: boolean;
 };
 

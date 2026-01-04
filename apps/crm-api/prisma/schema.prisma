@@ -13,8 +13,8 @@ datasource db {
 model Lead {
   id        String   @id @default(cuid())
   name      String
-  category  String?
-  phone     String?
+  businessType String?
+  phones       String[] @default([])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

@@ -17,6 +17,9 @@ async function bootstrap() {
     }),
   );
 
+  app.enableShutdownHooks();
+
+
   app.useGlobalFilters(new PrismaExceptionFilter());
 
   const config = new DocumentBuilder()

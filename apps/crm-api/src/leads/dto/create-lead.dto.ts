@@ -1,19 +1,16 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, MinLength } from 'class-validator';
+import { IsArray, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class CreateLeadDto {
-  @ApiProperty({ example: 'Cafe Milano', minLength: 2 })
   @IsString()
   @MinLength(2)
   name!: string;
 
-  @ApiPropertyOptional({ example: 'Cafe' })
   @IsOptional()
   @IsString()
-  category?: string;
+  businessType?: string;
 
-  @ApiPropertyOptional({ example: '+963999999' })
   @IsOptional()
-  @IsString()
-  phone?: string;
+  @IsArray()
+  @IsString({ each: true })
+  phones?: string[];
 }

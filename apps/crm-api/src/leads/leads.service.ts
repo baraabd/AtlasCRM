@@ -17,9 +17,9 @@ export class LeadsService {
   async create(dto: CreateLeadDto) {
     return this.prisma.lead.create({
       data: {
-        name: dto.name,
-        category: dto.category ?? null,
-        phone: dto.phone ?? null,
+        name: dto.name.trim(),
+        businessType: dto.businessType?.trim() || null,
+        phones: dto.phones?.length ? dto.phones : [],
       },
     });
   }
