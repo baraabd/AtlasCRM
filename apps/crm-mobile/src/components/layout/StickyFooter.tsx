@@ -1,9 +1,10 @@
 // apps\crm-mobile\src\components\layout\StickyFooter.tsx
 import React from 'react';
 import { View, StyleSheet, SafeAreaView } from 'react-native';
+
+import { OutlineButton } from '../../components/ui/OutlineButton';
 import { PrimaryButton } from '../../components/ui/PrimaryButton';
 import { SecondaryButton } from '../../components/ui/SecondaryButton';
-import { OutlineButton } from '../../components/ui/OutlineButton';
 
 export function StickyFooter({ actions = [] }: { actions?: any[] }) {
   if (!actions.length) return null;

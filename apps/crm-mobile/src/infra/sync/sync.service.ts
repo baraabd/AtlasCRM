@@ -1,10 +1,11 @@
 // apps/crm-mobile/src/infra/sync/sync.service.ts
 
-import { listPendingEvents, markSent } from '../repos/syncQueue.repo';
-import { httpPost } from './sync.http';
-import { applyLeadFromServer, applyVisitFromServer } from './sync.apply';
 import { endpoints } from '../api/endpoints';
 import { getCursor, setCursor } from '../repos/meta.repo';
+import { listPendingEvents, markSent } from '../repos/syncQueue.repo';
+
+import { applyLeadFromServer, applyVisitFromServer } from './sync.apply';
+import { httpPost } from './sync.http';
 
 export async function runSync() {
   console.log('[SYNC] 🔄 Starting the synchronization cycle...');

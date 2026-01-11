@@ -1,7 +1,6 @@
 // apps/crm-mobile/src/infra/api/api.ts
 import axios from 'axios';
 import { Platform } from 'react-native';
-import { endpoints } from './endpoints'; // استيراد المسارات
 
 const getBaseUrl = () => {
   if (process.env.EXPO_PUBLIC_API_URL) return process.env.EXPO_PUBLIC_API_URL;
@@ -18,18 +17,17 @@ export const api = axios.create({
   timeout: 15000,
 });
 
-// دالة التحقق من حالة السيرفر التي يطلبها الـ Dashboard
 export async function getHealth(): Promise<string> {
   try {
     const response = await api.get('/health', { 
       timeout: 2000,
-      // منع axios من إلقاء خطأ إذا كان الرد 404
       validateStatus: (status) => status < 500 
     });
 
     if (response.status === 404) return 'Not Configured';
     return response.data?.status || 'OK';
-  } catch (error) {
+  } catch {
+    // ✅ تم حذف _error لإصلاح خطأ ESLint
     return 'Offline';
   }
 }

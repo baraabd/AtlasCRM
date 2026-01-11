@@ -1,15 +1,15 @@
 // apps/crm-mobile/App.tsx
 import 'react-native-get-random-values';
 import React, { useEffect, useState } from 'react';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { ActivityIndicator, View, Text, Button, StyleSheet } from 'react-native';
 import { ErrorBoundary } from 'react-error-boundary';
+import { ActivityIndicator, View, Text, Button, StyleSheet } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { RootNavigator } from './src/navigation/RootNavigator';
-import { SyncRunner } from './src/infra/sync/sync.runner';
-import { LeadsProvider } from './src/state/LeadsContext';
 import { initDb } from './src/infra/db/db';
 import { runMigrations } from './src/infra/db/migrations';
+import { SyncRunner } from './src/infra/sync/sync.runner';
+import { RootNavigator } from './src/navigation/RootNavigator';
+import { LeadsProvider } from './src/state/LeadsContext';
 
 /**
  * شاشة بديلة تظهر في حال حدوث خطأ برمجي كارثي لمنع الشاشة البيضاء

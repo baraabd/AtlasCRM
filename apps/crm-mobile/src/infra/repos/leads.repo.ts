@@ -1,7 +1,9 @@
 // apps/crm-mobile/src/infra/repos/leads.repo.ts
 
 import { v4 as uuid } from 'uuid';
+
 import { exec, queryAll, withTx } from '../db/db';
+
 import { addSyncEvent } from './syncQueue.repo';
 
 export async function listLeads() {

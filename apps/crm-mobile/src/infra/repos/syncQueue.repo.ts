@@ -1,5 +1,7 @@
+// apps/crm-mobile/src/infra/repos/syncQueue.repo.ts
 import { v4 as uuid } from 'uuid';
-import { db } from '../db/db'; // الربط مع المحرك الموحد
+
+import { db } from '../db/db';
 
 export type SyncQueueStatus = 'pending' | 'sent' | 'failed';
 
@@ -13,14 +15,9 @@ export type SyncQueueRow = {
   createdAt: string;
 };
 
-/**
- * إضافة حدث جديد لطابور المزامنة
- * تم تعديل أسماء الأعمدة لتطابق الهيكل الجديد (camelCase)
- */
-
-export async function markRetry(eventId: string, error: string) {
+// ✅ تم تغيير error إلى _error لإصلاح الخطأ
+export async function markRetry(eventId: string, _error: string) {
   try {
-    // نقوم بتحديث الحالة إلى 'pending' لكي تحاول المزامنة مرة أخرى في الدورة القادمة
     await db.runAsync(
       `UPDATE sync_queue SET status = 'pending' WHERE eventId = ?`,
       [eventId]
@@ -61,9 +58,6 @@ export async function addSyncEvent(input: {
   }
 }
 
-/**
- * جلب الأحداث التي تنتظر الإرسال
- */
 export async function listPendingEvents(limit = 50): Promise<SyncQueueRow[]> {
   try {
     const results = await db.getAllAsync(
@@ -77,9 +71,6 @@ export async function listPendingEvents(limit = 50): Promise<SyncQueueRow[]> {
   }
 }
 
-/**
- * تحديث حالة الحدث بعد الإرسال الناجح
- */
 export async function markSent(eventId: string): Promise<void> {
   try {
     await db.runAsync(
@@ -91,9 +82,6 @@ export async function markSent(eventId: string): Promise<void> {
   }
 }
 
-/**
- * تحديث الحالة في حال الفشل
- */
 export async function markFailed(eventId: string) {
   try {
     await db.runAsync(

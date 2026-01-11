@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
+
 import { queryAll, exec } from '../infra/db/db';
-import { Lead } from '../types/domain';
+import type { Lead } from '../types/domain';
 
 export function useLeads() {
   const [leads, setLeads] = useState<Lead[]>([]);

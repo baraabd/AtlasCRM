@@ -13,15 +13,17 @@ import { useLeadsCtx } from '../../state/LeadsContext';
 
 export function SelectLeadScreen({ navigation, route }: ScreenProps<'SelectLead'>) {
   // استخدام المسميات الصحيحة التي يوفرها الـ Context
-  const { loading, error, leads, refresh } = useLeadsCtx();
+  const { loading, error, leads, refreshLeads } = useLeadsCtx();
 
   const [query, setQuery] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log('[SELECT_LEAD] Refreshing leads list...');
     const id = route.params?.selectLeadId;
+    void refreshLeads(); // ✅ استدعاء الدالة الصحيحة
     if (id) setSelectedId(id);
-  }, [route.params?.selectLeadId]);
+  }, [route.params?.selectLeadId, refreshLeads]); // ✅ تصحيح مصفوفة الاعتماديات
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -67,7 +69,7 @@ export function SelectLeadScreen({ navigation, route }: ScreenProps<'SelectLead'
   if (error) {
     return (
       <Screen footer={footer}>
-        <Banner variant="error" text={error} action={{ label: 'Retry', onPress: refresh }} />
+        <Banner variant="error" text={error} action={{ label: 'Retry', onPress: refreshLeads }} />
       </Screen>
     );
   }

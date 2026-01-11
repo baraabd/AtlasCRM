@@ -1,5 +1,6 @@
+// apps/crm-mobile/src/screens/app/VisitLiveScreen.tsx
 import React, { useEffect } from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 
 import { Banner } from '../../components/feedback/Banner';
 import { Screen } from '../../components/layout/Screen';
@@ -25,12 +26,8 @@ export function VisitLiveScreen({ navigation, route }: ScreenProps<'VisitLive'>)
   const right = (
     <OutlineButton
       label="End"
-      onPress={() => {
-        // Sprint 2: navigate to EndVisit screen with visitId
-        navigation.navigate('SelectLead');
-      }}
+      onPress={() => navigation.navigate('SelectLead')}
     />
-
   );
 
   return (
@@ -38,20 +35,49 @@ export function VisitLiveScreen({ navigation, route }: ScreenProps<'VisitLive'>)
       {live.error && <Banner variant="error" text={live.error.message} />}
 
       <Card>
-        <Text style={{ fontWeight: '800', fontSize: 16 }}>Visit in progress</Text>
-        <Text style={{ marginTop: 8, fontSize: 28, fontWeight: '900' }}>{formatSec(live.elapsedSec)}</Text>
-        <Text style={{ marginTop: 8, color: '#6b7280' }}>
+        <Text style={styles.statusTitle}>Visit in progress</Text>
+        <Text style={styles.timer}>{formatSec(live.elapsedSec)}</Text>
+        <Text style={styles.ids}>
           visitId: {route.params.visitId} • leadId: {route.params.leadId}
         </Text>
       </Card>
 
       <Card>
-        <Text style={{ fontWeight: '800' }}>Actions</Text>
-        <View style={{ height: 10 }} />
-        <OutlineButton label="Create Deal" onPress={() => navigation.navigate('CreateDeal', { leadId: route.params.leadId, visitId: route.params.visitId })} />
-        <View style={{ height: 10 }} />
-        <OutlineButton label="Deal Details (sample)" onPress={() => navigation.navigate('DealDetails', { dealId: 'deal_sample' })} />
+        <Text style={styles.actionTitle}>Actions</Text>
+        <View style={styles.spacer} />
+        <OutlineButton 
+          label="Create Deal" 
+          onPress={() => navigation.navigate('CreateDeal', { leadId: route.params.leadId, visitId: route.params.visitId })} 
+        />
+        <View style={styles.spacer} />
+        <OutlineButton 
+          label="Deal Details (sample)" 
+          onPress={() => navigation.navigate('DealDetails', { dealId: 'deal_sample' })} 
+        />
       </Card>
     </Screen>
   );
 }
+
+// ✅ تم تعريف كافة التنسيقات هنا لإصلاح تحذيرات الـ Lint
+const styles = StyleSheet.create({
+  statusTitle: { 
+    fontWeight: '800', 
+    fontSize: 16 
+  },
+  timer: { 
+    marginTop: 8, 
+    fontSize: 28, 
+    fontWeight: '900' 
+  },
+  ids: { 
+    marginTop: 8, 
+    color: '#6b7280' 
+  },
+  actionTitle: { 
+    fontWeight: '800' 
+  },
+  spacer: { 
+    height: 10 
+  },
+});

@@ -1,8 +1,8 @@
+import * as Network from 'expo-network';
 import { useEffect } from 'react';
 import { AppState } from 'react-native';
 
 import { runSyncWithRetry } from './sync.service';
-import * as Network from 'expo-network';
 
 async function isOnline() {
   try {

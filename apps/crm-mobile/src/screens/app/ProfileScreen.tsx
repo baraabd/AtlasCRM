@@ -1,5 +1,6 @@
+// apps/crm-mobile/src/screens/app/ProfileScreen.tsx
 import React from 'react';
-import { Text } from 'react-native';
+import { Text, StyleSheet } from 'react-native';
 
 import { Screen } from '../../components/layout/Screen';
 import { Card } from '../../components/ui/Card';
@@ -10,11 +11,22 @@ export function ProfileScreen({ navigation }: ScreenProps<'Profile'>) {
   return (
     <Screen title="Profile">
       <Card>
-        <Text style={{ fontSize: 18, fontWeight: '900' }}>Baraa</Text>
-        <Text style={{ marginTop: 6, color: '#6b7280' }}>Role: Agent</Text>
+        <Text style={styles.userName}>Baraa</Text>
+        <Text style={styles.userRole}>Role: Agent</Text>
       </Card>
 
       <PrimaryButton label="Back to Dashboard" onPress={() => navigation.navigate('Dashboard')} />
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  userName: { 
+    fontSize: 18, 
+    fontWeight: '900' 
+  },
+  userRole: { 
+    marginTop: 6, 
+    color: '#6b7280' 
+  },
+});

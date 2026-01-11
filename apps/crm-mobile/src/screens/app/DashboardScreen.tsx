@@ -1,15 +1,14 @@
-// apps/crm-mobile/src/screens/app/DashboardScreen.tsx
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
 import { Banner } from '../../components/feedback/Banner';
+import { EmptyState } from '../../components/feedback/EmptyState';
 import { Skeleton } from '../../components/feedback/Skeleton';
 import { Screen } from '../../components/layout/Screen';
 import { Card } from '../../components/ui/Card';
 import { PrimaryButton } from '../../components/ui/PrimaryButton';
-import { EmptyState } from '../../components/feedback/EmptyState';
 import { useDashboard } from '../../hooks/useDashboard';
-import { runSync } from '../../infra/sync/sync.service'; // استيراد المزامنة
+import { runSync } from '../../infra/sync/sync.service';
 import type { ScreenProps } from '../../screens/_types';
 
 function formatSec(sec: number) {
@@ -25,17 +24,14 @@ export function DashboardScreen({ navigation }: ScreenProps<'Dashboard'>) {
     void actions.refresh();
   }, [actions]);
 
-  // دالة التعامل مع بدء الزيارة لضمان عدم الانهيار
   const handleStartVisit = () => {
-    // 1. الانتقال فوراً (لا ننتظر الإنترنت)
     navigation.navigate('SelectLead');
-    
-    // 2. محاولة المزامنة "بصمت" خلف الكواليس
     void runSync().catch(err => console.log('[DASHBOARD] background sync skipped:', err));
   };
 
+  // ✅ تم نقل التنسيق إلى styles.footer لإصلاح تحذير Inline Style
   const footer = (
-    <View style={{ padding: 16 }}>
+    <View style={styles.footerContainer}>
       <PrimaryButton label="Start Visit" onPress={handleStartVisit} />
     </View>
   );
@@ -60,9 +56,11 @@ export function DashboardScreen({ navigation }: ScreenProps<'Dashboard'>) {
     );
   }
 
+  // تحديد لون حالة السيرفر برمجياً بناءً على الحالة
+  const statusColor = message === 'OK' ? styles.statusOk : styles.statusError;
+
   return (
     <Screen title="Dashboard" footer={footer}>
-      {/* ظهور بانر عند انقطاع الإنترنت */}
       {offline && (
         <Banner 
           variant="offline" 
@@ -73,7 +71,7 @@ export function DashboardScreen({ navigation }: ScreenProps<'Dashboard'>) {
       <Card>
         <Text style={styles.h}>Work timer</Text>
         <Text style={styles.big}>{formatSec(data?.workTimerSec ?? 0)}</Text>
-        <Text style={[styles.sub, { color: message === 'OK' ? '#10b981' : '#ef4444' }]}>
+        <Text style={[styles.sub, statusColor]}>
           Server Status: {message ?? 'Checking...'}
         </Text>
       </Card>
@@ -98,7 +96,7 @@ export function DashboardScreen({ navigation }: ScreenProps<'Dashboard'>) {
         <EmptyState title="No follow-ups today" subtitle="You are all set." />
       )}
 
-      <View style={{ marginTop: 12 }}>
+      <View style={styles.profileButtonContainer}>
         <PrimaryButton 
           label="My Profile" 
           onPress={() => navigation.navigate('Profile')} 
@@ -113,4 +111,17 @@ const styles = StyleSheet.create({
   big: { fontSize: 28, fontWeight: '800', color: '#111827' },
   sub: { fontSize: 12, marginTop: 8, fontWeight: '600' },
   row: { fontSize: 14, color: '#374151', marginTop: 6 },
+  // ✅ التنسيقات الجديدة لإصلاح التحذيرات:
+  footerContainer: {
+    padding: 16,
+  },
+  profileButtonContainer: {
+    marginTop: 12,
+  },
+  statusOk: {
+    color: '#10b981',
+  },
+  statusError: {
+    color: '#ef4444',
+  },
 });

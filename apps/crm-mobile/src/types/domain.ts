@@ -75,3 +75,11 @@ export type DealDraft = {
 };
 export type ServiceItem = { id: string; name: string; basePrice: number; category: string; };
 export type DiscountPolicy = { agentMaxPct: number; allowOverride: boolean; };
+
+export interface VisitPresented {
+  id: string;
+  leadName: string;
+  outcome: string;
+  createdAt: string;
+  // أضف أي حقول أخرى تحتاجها واجهة العرض
+}

@@ -1,9 +1,9 @@
 // apps/crm-mobile/src/infra/sync/sync.http.ts
 
 import { Platform } from 'react-native';
+
 // استيراد endpoints ليس ضرورياً هنا داخل الدوال العامة، 
 // ولكن نستخدمه في BASE_URL إذا أردنا توحيد الإصدار
-import { endpoints } from '../api/endpoints';
 
 function getHost() {
   if (Platform.OS === 'android' && process.env.EXPO_PUBLIC_USE_EMULATOR === 'true') {

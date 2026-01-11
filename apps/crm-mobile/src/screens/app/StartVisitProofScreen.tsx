@@ -1,5 +1,7 @@
+// apps/crm-mobile/src/screens/app/StartVisitProofScreen.tsx
+
 import React from 'react';
-import { Text } from 'react-native';
+import { Text, StyleSheet } from 'react-native';
 
 import { Screen } from '../../components/layout/Screen';
 import { StickyFooter } from '../../components/layout/StickyFooter';
@@ -11,29 +13,47 @@ export function StartVisitProofScreen({ navigation, route }: ScreenProps<'StartV
   const { actions } = useVisitFlow();
   const { leadId } = route.params;
 
+  // ✅ تصحيح البنية لتستخدم actions[] بدلاً من primary/secondary لإصلاح الخطأ TS2322
   const footer = (
     <StickyFooter
-      primary={{
-        label: 'Start Visit',
-        onPress: async () => {
-          const r = await actions.startVisit(leadId);
-          navigation.replace('VisitLive', { visitId: r.visitId, leadId });
+      actions={[
+        {
+          label: 'Start Visit',
+          variant: 'primary',
+          onPress: async () => {
+            console.log(`[PROOF] Starting visit for lead: ${leadId}`);
+            try {
+              const r = await actions.startVisit(leadId);
+              navigation.replace('VisitLive', { visitId: r.visitId, leadId });
+            } catch (err) {
+              console.error('[PROOF] Failed to start visit:', err);
+            }
+          },
         },
-      }}
-      secondary={{
-        label: 'Back',
-        variant: 'outline',
-        onPress: () => navigation.goBack(),
-      }}
+        {
+          label: 'Back',
+          variant: 'outline',
+          onPress: () => navigation.goBack(),
+        },
+      ]}
     />
   );
 
   return (
     <Screen title="Start Visit Proof" footer={footer}>
       <Card>
-        <Text>Lead ID: {leadId}</Text>
-        <Text>Proof screen will be implemented in Sprint 2 exactly as designed.</Text>
+        <Text style={styles.label}>Lead ID:</Text>
+        <Text style={styles.value}>{leadId}</Text>
+        <Text style={styles.info}>
+          Proof screen will be implemented in Sprint 2 exactly as designed.
+        </Text>
       </Card>
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  label: { fontSize: 14, fontWeight: 'bold', color: '#4b5563' },
+  value: { fontSize: 16, marginBottom: 12, color: '#111827' },
+  info: { fontSize: 14, color: '#6b7280', fontStyle: 'italic' }
+});

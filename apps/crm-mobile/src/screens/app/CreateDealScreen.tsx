@@ -1,12 +1,13 @@
+// apps/crm-mobile/src/screens/app/CreateDealScreen.tsx
 import React, { useEffect } from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { Text, Pressable, StyleSheet } from 'react-native';
 
-import { useDeals } from '../..//hooks/useDeals';
 import { Banner } from '../../components/feedback/Banner';
 import { Skeleton } from '../../components/feedback/Skeleton';
 import { Screen } from '../../components/layout/Screen';
 import { StickyFooter } from '../../components/layout/StickyFooter';
 import { Card } from '../../components/ui/Card';
+import { useDeals } from '../../hooks/useDeals';
 import type { ScreenProps } from '../../screens/_types';
 
 export function CreateDealScreen({ navigation, route }: ScreenProps<'CreateDeal'>) {
@@ -50,10 +51,10 @@ export function CreateDealScreen({ navigation, route }: ScreenProps<'CreateDeal'
     <Screen title="Create Deal" footer={footer}>
       {discountExceeded && <Banner variant="warning" text="Discount exceeds limit." />}
       <Card>
-        <Text style={{ fontWeight: '900', fontSize: 16 }}>Services</Text>
+        <Text style={styles.sectionTitle}>Services</Text>
         {(create.catalog ?? []).map((svc: any) => (
-          <Pressable key={svc.id} onPress={() => actions.toggleService(svc.id)} style={{ paddingVertical: 10 }}>
-            <Text style={{ fontWeight: '800' }}>
+          <Pressable key={svc.id} onPress={() => actions.toggleService(svc.id)} style={styles.serviceItem}>
+            <Text style={styles.serviceText}>
               {create.draft.selections.some((s: any) => s.serviceId === svc.id) ? '✅ ' : '⬜ '} {svc.name}
             </Text>
           </Pressable>
@@ -62,3 +63,16 @@ export function CreateDealScreen({ navigation, route }: ScreenProps<'CreateDeal'
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  sectionTitle: { 
+    fontWeight: '900', 
+    fontSize: 16 
+  },
+  serviceItem: { 
+    paddingVertical: 10 
+  },
+  serviceText: { 
+    fontWeight: '800' 
+  },
+});

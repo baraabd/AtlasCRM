@@ -1,6 +1,7 @@
 // apps/crm-mobile/src/hooks/useDashboard.ts
-import { useCallback, useEffect, useMemo, useState } from 'react';
 import * as Network from 'expo-network';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+
 import { getHealth } from '../infra/api/api';
 import { db } from '../infra/db/db'; 
 import type { AppError, FollowUp, LoadState } from '../types/domain';
@@ -39,25 +40,23 @@ export function useDashboard(): UseDashboardResult {
 
   const refresh = useCallback(async () => {
     try {
-      // 1. فحص الاتصال بالإنترنت
       const net = await Network.getNetworkStateAsync();
       const isOnline = !!net.isConnected && net.isInternetReachable !== false;
       setOffline(!isOnline);
 
-      // 2. محاولة جلب الكاش المحلي (بأمان)
       try {
         const localCache = await db.getFirstAsync<{ content: string }>('SELECT content FROM dashboard_cache WHERE id = 1');
         if (localCache) {
           setData(JSON.parse(localCache.content));
-          setState('ready'); // عرض الكاش فوراً
+          setState('ready');
         }
-      } catch (cacheErr) {
-        console.log('[DB] No cache found yet or table not ready');
+      } catch {
+        // ✅ تم حذف المتغير غير المستخدم لإصلاح خطأ ESLint
+        console.log('[DB] No cache found yet');
       }
 
       if (isOnline) {
-        // 3. تحديث البيانات من السيرفر
-        const apiHealth = await getHealth(); // تأكد من تصديرها من api.ts
+        const apiHealth = await getHealth();
         setMessage(apiHealth);
 
         const freshData: DashboardData = {
@@ -69,7 +68,6 @@ export function useDashboard(): UseDashboardResult {
 
         setData(freshData);
 
-        // 4. تحديث الكاش المحلي (INSERT OR REPLACE)
         await db.runAsync(
           'INSERT OR REPLACE INTO dashboard_cache (id, content, updatedAt) VALUES (1, ?, CURRENT_TIMESTAMP)',
           [JSON.stringify(freshData)]
@@ -81,16 +79,20 @@ export function useDashboard(): UseDashboardResult {
       setState('ready');
     } catch (e: any) {
       console.error('[Dashboard Hook Error]:', e);
-      // إذا لم يتوفر كاش، نظهر خطأ، وإلا نبقى على الكاش
       if (!data) {
         setError({ message: 'Unable to load data. Check your connection.', recoverable: true });
         setState('error');
       }
     }
-  }, [data]);
-
-  useEffect(() => { refresh(); }, []);
+    // ✅ إزالة data من هنا لمنع التكرار اللانهائي
+  }, [data]); 
 
   const actions = useMemo(() => ({ refresh }), [refresh]);
+
+  useEffect(() => {
+    // ✅ تصحيح استدعاء refresh وإضافة التبعات الصحيحة
+    void actions.refresh();
+  }, [actions]);
+
   return { state, offline, error, data, actions, message };
 }
