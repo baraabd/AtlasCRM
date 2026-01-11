@@ -30,9 +30,9 @@ export type UseVisitFlowResult = {
 };
 
 const mockLeads: Lead[] = [
-  { id: 'lead_1', name: 'Cafe Milano', businessType: 'Cafe', distanceM: 120, phones: ['+963 9xx xxx xxx'], hasOpenDeal: true },
-  { id: 'lead_2', name: 'Dental Smile Clinic', businessType: 'Clinic', distanceM: 540, phones: ['+963 9xx xxx xxx'], hasOpenDeal: false },
-  { id: 'lead_3', name: 'Auto Parts Center', businessType: 'Retail', distanceM: 980, phones: ['+963 9xx xxx xxx'], hasOpenDeal: false },
+  { id: 'lead_1', name: 'Cafe Milano', businessType: 'Cafe', distanceM: 120, phone: ['+963 9xx xxx xxx'], hasOpenDeal: true },
+  { id: 'lead_2', name: 'Dental Smile Clinic', businessType: 'Clinic', distanceM: 540, phone: ['+963 9xx xxx xxx'], hasOpenDeal: false },
+  { id: 'lead_3', name: 'Auto Parts Center', businessType: 'Retail', distanceM: 980, phone: ['+963 9xx xxx xxx'], hasOpenDeal: false },
 ];
 
 export function useVisitFlow(): UseVisitFlowResult {

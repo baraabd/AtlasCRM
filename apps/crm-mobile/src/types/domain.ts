@@ -1,24 +1,19 @@
 export type Stage = 'NEW' | 'QUALIFIED' | 'PROPOSAL' | 'NEGOTIATION' | 'WON' | 'LOST';
 export type ApprovalStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | null;
-
 export type LoadState = 'idle' | 'loading' | 'ready' | 'empty' | 'error' | 'offline';
-
-
-export type LatLng = { lat: number; lng: number };
 
 export type Lead = {
   id: string;
+  serverId?: string | null; // أضفت هذا للحفاظ على التوافق
   name: string;
   businessType?: string | null;
-  phones?: string[];
+  phones?: string[];        // تم التوحيد على phones ومصفوفة
+  address?: string | null;
   distanceM?: number | null;
-  /* location?: LatLng | null;
-  lastVisitedAt?: string | null;
-  hasOpenDeal?: boolean; */
   hasOpenDeal?: boolean;
 };
 
-
+// ... باقي الأنواع (Deal, Visit, etc) كما هي في كودك الأصلي ...
 export type Deal = {
   id: string;
   leadId: string;
@@ -39,72 +34,21 @@ export type FollowUp = {
   dealId?: string;
 };
 
-export type TimeLogSummary = {
-  clockInAt: string;
-  clockOutAt?: string | null;
-  workedMin: number;
-  breakMin: number;
-  visitsCount: number;
-  dealsCreated: number;
+export type DashboardStats = {
+  visitsToday: number;
+  openDeals: number;
+  followUps: number;
 };
 
-export type GpsStatus = {
-  tone: 'success' | 'warning' | 'error';
-  text: string;
-  accuracyM?: number;
+export type DashboardData = {
+  workTimerSec: number;
+  clockedInSince?: string;
+  stats: DashboardStats;
+  followUpsToday: FollowUp[];
+  apiHealth?: string;
 };
-
-export type AppError = {
-  message: string;
-  code?: string;
-  recoverable?: boolean;
-};
-
-export type ButtonSpec = {
-  label: string;
-  onPress: () => void;
-  disabled?: boolean;
-  loading?: boolean;
-  variant?: 'primary' | 'secondary' | 'outline' | 'danger';
-};
-
-export type ServiceItem = {
-  id: string;
-  name: string;
-  basePrice: number;
-  category: string;
-  hasPackages?: boolean;
-};
-
-export type ServiceSelection = {
-  serviceId: string;
-  packageId?: string;
-  addonIds?: string[];
-};
-
-export type DealDraft = {
-  leadId: string;
-  visitId?: string;
-  selections: ServiceSelection[];
-  discountValue: number;
-  discountType: 'PERCENT' | 'AMOUNT';
-};
-
-export type DiscountPolicy = {
-  agentMaxPct: number;
-  allowOverride: boolean;
-};
-
-
-
 
 export type VisitOutcome = 'FOLLOW_UP' | 'WON' | 'LOST' | 'NO_ACTION';
-
-export type VisitPresented = {
-  serviceOverview: boolean;
-  pricingShown: boolean;
-  brochureGiven: boolean;
-};
 
 export type Visit = {
   id: string;
@@ -115,3 +59,19 @@ export type Visit = {
   outcome?: VisitOutcome | null;
   notes?: string | null;
 };
+
+export type AppError = {
+  message: string;
+  code?: string;
+  recoverable?: boolean;
+};
+// ... (بقيت الأنواع كما هي)
+export type DealDraft = {
+  leadId: string;
+  visitId?: string;
+  selections: any[];
+  discountValue: number;
+  discountType: 'PERCENT' | 'AMOUNT';
+};
+export type ServiceItem = { id: string; name: string; basePrice: number; category: string; };
+export type DiscountPolicy = { agentMaxPct: number; allowOverride: boolean; };

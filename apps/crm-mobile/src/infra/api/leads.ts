@@ -5,7 +5,7 @@ import { api } from './api';
 export type CreateLeadInput = {
   name: string;
   businessType?: string;
-  phones?: string[];
+  phone?: string[];
 };
 
 export async function getLeads(): Promise<Lead[]> {
@@ -17,7 +17,7 @@ export async function createLead(input: CreateLeadInput): Promise<Lead> {
   const payload: Record<string, unknown> = { name: input.name };
 
   if (input.businessType?.trim()) payload.businessType = input.businessType.trim();
-  if (input.phones?.length) payload.phones = input.phones;
+  if (input.phone?.length) payload.phone = input.phone;
 
   const res = await api.post<Lead>('/leads', payload);
   return res.data;

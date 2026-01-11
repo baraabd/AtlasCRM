@@ -1,30 +1,78 @@
-import React, { createContext, useContext, useEffect, useMemo, useRef } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import * as leadsRepo from '../infra/repos/leads.repo';
 
-import { useLeads } from '../hooks/useLeads';
+interface LeadsContextType {
+  leads: any[];
+  createLead: (input: any) => Promise<string>;
+  refreshLeads: () => Promise<void>;
+  loading: boolean;
+  error: string | null;
+}
 
-type LeadsCtx = ReturnType<typeof useLeads>;
+const LeadsContext = createContext<LeadsContextType | undefined>(undefined);
 
-const Ctx = createContext<LeadsCtx | null>(null);
+export const LeadsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [leads, setLeads] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-export function LeadsProvider({ children }: { children: React.ReactNode }) {
-  const leads = useLeads();
-  const didInitRef = useRef(false);
+  // ✅ دالة تحديث القائمة مع سجلات تتبع
+  const refreshLeads = useCallback(async () => {
+    console.log('[CONTEXT] 🔄 refreshLeads started...');
+    try {
+      const data = await leadsRepo.listLeads();
+      console.log(`[CONTEXT] Successfully fetched ${data.length} leads from Repo.`);
+      setLeads(data);
+    } catch (err: any) {
+      console.error("[CONTEXT] ❌ Failed to refresh leads:", err.message);
+    }
+  }, []);
 
-  const { refresh } = leads;
-
+  // جلب البيانات عند تشغيل التطبيق
   useEffect(() => {
-    if (didInitRef.current) return;
-    didInitRef.current = true;
-    void refresh();
-  }, [refresh]);
+    console.log('[CONTEXT] LeadsProvider mounted. Initial fetch...');
+    refreshLeads();
+  }, [refreshLeads]);
 
-  const value = useMemo(() => leads, [leads]);
+  // ✅ دالة إنشاء العميل مع تتبع الخطوات
+  const createLead = useCallback(async (input: any) => {
+    console.log('[CONTEXT] 🚀 createLead called with data:', JSON.stringify(input));
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // 1. استدعاء مستودع البيانات للحفظ المحلي
+      console.log('[CONTEXT] Calling leadsRepo.upsertLeadLocal...');
+      const id = await leadsRepo.upsertLeadLocal(input);
+      console.log(`[CONTEXT] Local save successful. New ID: ${id}`);
+      
+      // 2. تحديث الحالة المحلية فوراً ليظهر العميل في القائمة
+      console.log('[CONTEXT] Triggering immediate list refresh...');
+      await refreshLeads(); 
+      
+      console.log('[CONTEXT] ✅ createLead flow completed.');
+      return id;
+    } catch (err: any) {
+      console.error('[CONTEXT] ❌ Error in createLead flow:', err.message);
+      setError(err.message || 'Save failed');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [refreshLeads]);
 
-  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
-}
+  return (
+    <LeadsContext.Provider value={{ leads, createLead, refreshLeads, loading, error }}>
+      {children}
+    </LeadsContext.Provider>
+  );
+};
 
-export function useLeadsCtx() {
-  const ctx = useContext(Ctx);
-  if (!ctx) throw new Error('useLeadsCtx must be used within LeadsProvider');
-  return ctx;
-}
+export const useLeadsCtx = () => {
+  const context = useContext(LeadsContext);
+  if (!context) {
+    console.error('[CONTEXT] ❌ useLeadsCtx used outside of Provider!');
+    throw new Error('useLeadsCtx must be used within LeadsProvider');
+  }
+  return context;
+};

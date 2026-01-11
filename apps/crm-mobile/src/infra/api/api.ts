@@ -1,33 +1,43 @@
+// apps/crm-mobile/src/infra/api/api.ts
 import axios from 'axios';
 import { Platform } from 'react-native';
+import { endpoints } from './endpoints'; // استيراد المسارات
 
-// يفضّل ترك المنفذ ثابتاً إذا سيرفرك شغال على 3000
-const API_PORT = Number(process.env.EXPO_PUBLIC_API_PORT ?? 3000);
-
-/**
- * EXPO_PUBLIC_API_HOST:
- * - جهاز حقيقي: ضع IP جهاز الكمبيوتر على نفس الشبكة (مثال 192.168.1.56)
- * - محاكي أندرويد: يمكن تركه فارغاً وسيستخدم 10.0.2.2 تلقائياً
- */
-const LAN_HOST = process.env.EXPO_PUBLIC_API_HOST?.trim();
-
-// خيار إضافي إذا تريد إجبار استخدام المحاكي حتى لو وضعت LAN_HOST
-const USE_ANDROID_EMULATOR =
-  (process.env.EXPO_PUBLIC_USE_EMULATOR ?? 'false').toLowerCase() === 'true';
-
-const host =
-  Platform.OS === 'android'
-    ? (USE_ANDROID_EMULATOR ? '10.0.2.2' : (LAN_HOST || '10.0.2.2'))
-    : (LAN_HOST || 'localhost');
-
-export const API_BASE_URL = `http://${host}:${API_PORT}`;
+const getBaseUrl = () => {
+  if (process.env.EXPO_PUBLIC_API_URL) return process.env.EXPO_PUBLIC_API_URL;
+  
+  return Platform.select({
+    android: 'http://10.0.2.2:3000',
+    ios: 'http://localhost:3000',
+    default: 'http://localhost:3000',
+  });
+};
 
 export const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: getBaseUrl(),
   timeout: 15000,
 });
 
+// دالة التحقق من حالة السيرفر التي يطلبها الـ Dashboard
 export async function getHealth(): Promise<string> {
-  const res = await api.get('/');
-  return typeof res.data === 'string' ? res.data : JSON.stringify(res.data);
+  try {
+    const response = await api.get('/health', { 
+      timeout: 2000,
+      // منع axios من إلقاء خطأ إذا كان الرد 404
+      validateStatus: (status) => status < 500 
+    });
+
+    if (response.status === 404) return 'Not Configured';
+    return response.data?.status || 'OK';
+  } catch (error) {
+    return 'Offline';
+  }
 }
+
+api.interceptors.response.use(
+  res => res,
+  err => {
+    console.error('🌐 API Error:', err.response?.data || err.message);
+    return Promise.reject(err);
+  }
+);

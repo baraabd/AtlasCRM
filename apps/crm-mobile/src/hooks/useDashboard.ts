@@ -1,8 +1,9 @@
-import { useCallback, useMemo, useState } from 'react';
-
+// apps/crm-mobile/src/hooks/useDashboard.ts
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import * as Network from 'expo-network';
 import { getHealth } from '../infra/api/api';
+import { db } from '../infra/db/db'; 
 import type { AppError, FollowUp, LoadState } from '../types/domain';
-
 
 export type DashboardStats = {
   visitsToday: number;
@@ -24,7 +25,6 @@ export type UseDashboardResult = {
   error: AppError | null;
   data: DashboardData | null;
   message: string | null; 
-
   actions: {
     refresh: () => Promise<void>;
   };
@@ -32,35 +32,65 @@ export type UseDashboardResult = {
 
 export function useDashboard(): UseDashboardResult {
   const [state, setState] = useState<LoadState>('loading');
-  const [offline] = useState(false);
+  const [offline, setOffline] = useState(false);
   const [error, setError] = useState<AppError | null>(null);
   const [data, setData] = useState<DashboardData | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-
   const refresh = useCallback(async () => {
     try {
-      setState('loading');
-      setError(null);
+      // 1. فحص الاتصال بالإنترنت
+      const net = await Network.getNetworkStateAsync();
+      const isOnline = !!net.isConnected && net.isInternetReachable !== false;
+      setOffline(!isOnline);
 
-      const apiHealth = await getHealth(); 
-      setMessage(apiHealth);
-      setData({
-        workTimerSec: 2 * 60 * 60 + 12 * 60,
-        clockedInSince: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-        stats: { visitsToday: 5, openDeals: 3, followUps: 2 },
-        followUpsToday: [],
-        apiHealth,
-      });
+      // 2. محاولة جلب الكاش المحلي (بأمان)
+      try {
+        const localCache = await db.getFirstAsync<{ content: string }>('SELECT content FROM dashboard_cache WHERE id = 1');
+        if (localCache) {
+          setData(JSON.parse(localCache.content));
+          setState('ready'); // عرض الكاش فوراً
+        }
+      } catch (cacheErr) {
+        console.log('[DB] No cache found yet or table not ready');
+      }
+
+      if (isOnline) {
+        // 3. تحديث البيانات من السيرفر
+        const apiHealth = await getHealth(); // تأكد من تصديرها من api.ts
+        setMessage(apiHealth);
+
+        const freshData: DashboardData = {
+          workTimerSec: 7200, 
+          stats: { visitsToday: 5, openDeals: 3, followUps: 2 },
+          followUpsToday: [],
+          apiHealth,
+        };
+
+        setData(freshData);
+
+        // 4. تحديث الكاش المحلي (INSERT OR REPLACE)
+        await db.runAsync(
+          'INSERT OR REPLACE INTO dashboard_cache (id, content, updatedAt) VALUES (1, ?, CURRENT_TIMESTAMP)',
+          [JSON.stringify(freshData)]
+        );
+      } else {
+        setMessage('Offline');
+      }
 
       setState('ready');
     } catch (e: any) {
-      setError({ message: e?.message ?? 'Failed to load dashboard', recoverable: true });
-      setState('error');
+      console.error('[Dashboard Hook Error]:', e);
+      // إذا لم يتوفر كاش، نظهر خطأ، وإلا نبقى على الكاش
+      if (!data) {
+        setError({ message: 'Unable to load data. Check your connection.', recoverable: true });
+        setState('error');
+      }
     }
-  }, []);
+  }, [data]);
+
+  useEffect(() => { refresh(); }, []);
 
   const actions = useMemo(() => ({ refresh }), [refresh]);
-
   return { state, offline, error, data, actions, message };
 }

@@ -1,41 +1,42 @@
+// apps\crm-mobile\src\components\layout\StickyFooter.tsx
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
-
-import { OutlineButton } from '../../components/ui/OutlineButton';
+import { View, StyleSheet, SafeAreaView } from 'react-native';
 import { PrimaryButton } from '../../components/ui/PrimaryButton';
 import { SecondaryButton } from '../../components/ui/SecondaryButton';
-import type { ButtonSpec } from '../../types/domain';
+import { OutlineButton } from '../../components/ui/OutlineButton';
 
-type Props = {
-  primary?: ButtonSpec;
-  secondary?: ButtonSpec;
-};
+export function StickyFooter({ actions = [] }: { actions?: any[] }) {
+  if (!actions.length) return null;
 
-function renderButton(spec: ButtonSpec, key: string) {
-  const variant = spec.variant ?? 'primary';
-
-  if (variant === 'primary') {
-    return <PrimaryButton key={key} label={spec.label} onPress={spec.onPress} disabled={spec.disabled} loading={spec.loading} />;
-  }
-  if (variant === 'secondary') {
-    return <SecondaryButton key={key} label={spec.label} onPress={spec.onPress} disabled={spec.disabled} loading={spec.loading} />;
-  }
-  if (variant === 'outline' || variant === 'danger') {
-    return <OutlineButton key={key} label={spec.label} onPress={spec.onPress} disabled={spec.disabled} loading={spec.loading} variant={variant} />;
-  }
-  return null;
-}
-
-export function StickyFooter({ primary, secondary }: Props) {
   return (
-    <View style={styles.row}>
-      {secondary ? <View style={styles.btn}>{renderButton(secondary, 'secondary')}</View> : null}
-      {primary ? <View style={styles.btn}>{renderButton(primary, 'primary')}</View> : null}
-    </View>
+    <SafeAreaView style={styles.safe}>
+      <View style={styles.footer}>
+        {actions.map((btn, i) => {
+          // اختيار المكون بناءً على النوع المذكور في الكود
+          const ButtonComp = 
+            btn.variant === 'secondary' ? SecondaryButton :
+            btn.variant === 'outline' ? OutlineButton : 
+            PrimaryButton;
+
+          return (
+            <View key={i} style={styles.flex1}>
+              <ButtonComp label={btn.label} onPress={btn.onPress} />
+            </View>
+          );
+        })}
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', gap: 12 },
-  btn: { flex: 1 },
+  safe: { backgroundColor: '#fff' },
+  footer: {
+    flexDirection: 'row',
+    padding: 16,
+    gap: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+  },
+  flex1: { flex: 1 }
 });

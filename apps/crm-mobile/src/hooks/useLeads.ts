@@ -1,72 +1,67 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { queryAll, exec } from '../infra/db/db';
+import { Lead } from '../types/domain';
 
-import { createLead, getLeads, type CreateLeadInput } from '../infra/api/leads';
-import type { Lead, LoadState } from '../types/domain';
-
-type UseLeads = {
-  state: LoadState;
-  error: string | null;
-  items: Lead[];
-  byId: Map<string, Lead>;
-  refresh: () => Promise<void>;
-  create: (input: CreateLeadInput) => Promise<Lead>;
-};
-
-export function useLeads(): UseLeads {
-  const [state, setState] = useState<LoadState>('idle');
+export function useLeads() {
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [items, setItems] = useState<Lead[]>([]);
 
   const refresh = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
-      setState('loading');
-      setError(null);
-      const data = await getLeads();
-      setItems(data);
-      setState('ready');
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Failed to load leads';
-      setError(msg);
-      setState('error');
+      const result = await queryAll('SELECT * FROM leads ORDER BY createdAt DESC');
+      
+      const formatted = result.map((row: any) => ({
+        ...row,
+        // التعامل الآمن مع JSON
+        phones: row.phones ? JSON.parse(row.phones) : [] 
+      }));
+      setLeads(formatted);
+    } catch (e) {
+      console.error("Fetch leads error:", e);
+      setError("Failed to load leads");
+    } finally {
+      setLoading(false);
     }
   }, []);
 
-  const create = useCallback(async (input: CreateLeadInput) => {
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  const createLead = async (data: { name: string; businessType?: string; phones?: string[] }) => {
+    setLoading(true);
+    setError(null);
     try {
-      setState('loading');
-      setError(null);
-      const created = await createLead(input);
+      const id = Math.random().toString(36).substring(7); // أو استخدم uuid مكتبة
+      const now = new Date().toISOString();
+      // تحويل المصفوفة لنص للتخزين
+      const phonesJson = data.phones ? JSON.stringify(data.phones) : '[]';
 
-      // ✅ الخيار 1: تحديث لحظي (بدون refetch)
-      setItems((prev) => [created, ...prev]);
+      await exec(
+        'INSERT INTO leads (id, name, businessType, phones, createdAt, updatedAt, syncStatus) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [id, data.name, data.businessType || null, phonesJson, now, now, 'pending']
+      );
+      
+      await refresh();
 
-      setState('ready');
-      return created;
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Failed to create lead';
-      setError(msg);
-      setState('error');
+      return {
+        id,
+        name: data.name,
+        businessType: data.businessType,
+        phones: data.phones,
+        createdAt: now
+      };
+    } catch (e) {
+      console.error("Create lead error:", e);
+      setError("Failed to create lead");
       throw e;
+    } finally {
+      setLoading(false);
     }
-  }, []);
+  };
 
-  const byId = useMemo(() => {
-    const map = new Map<string, Lead>();
-    for (const l of items) map.set(l.id, l);
-    return map;
-  }, [items]);
-
- // ✅ مهم: نُرجع object memoized حتى لا يتغير بكل render
-  return useMemo(
-    () => ({
-      state,
-      error,
-      items,
-      byId,
-      refresh,
-      create,
-    }),
-    [state, error, items, byId, refresh, create],
-  );
+  return { leads, loading, error, refresh, createLead };
 }
-
