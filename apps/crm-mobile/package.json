@@ -21,6 +21,7 @@
     "expo": "~54.0.30",
     "expo-dev-client": "~6.0.20",
     "expo-file-system": "^19.0.21",
+    "expo-image-picker": "~17.0.10",
     "expo-network": "~8.0.8",
     "expo-secure-store": "^15.0.8",
     "expo-sqlite": "^16.0.10",

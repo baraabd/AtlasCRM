@@ -17,6 +17,7 @@ ios/
 
 # OS
 .DS_Store
+coverage/
 
 # Native
 .kotlin/

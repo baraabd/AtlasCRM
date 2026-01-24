@@ -1,43 +1,49 @@
-// apps\crm-mobile\src\components\layout\StickyFooter.tsx
+// apps/crm-mobile/src/components/layout/StickyFooter.tsx
+
 import React from 'react';
-import { View, StyleSheet, SafeAreaView } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 
-import { OutlineButton } from '../../components/ui/OutlineButton';
-import { PrimaryButton } from '../../components/ui/PrimaryButton';
-import { SecondaryButton } from '../../components/ui/SecondaryButton';
+import { PrimaryButton } from '../ui/PrimaryButton';
 
-export function StickyFooter({ actions = [] }: { actions?: any[] }) {
-  if (!actions.length) return null;
+type Action = {
+  label: string;
+  onPress: () => void;
+  variant?: 'primary' | 'secondary' | 'outline';
+  disabled?: boolean;
+  loading?: boolean;
+};
 
+type Props = {
+  primary?: Action;
+  secondary?: Action;
+};
+
+export function StickyFooter({ primary, secondary }: Props) {
   return (
-    <SafeAreaView style={styles.safe}>
-      <View style={styles.footer}>
-        {actions.map((btn, i) => {
-          // اختيار المكون بناءً على النوع المذكور في الكود
-          const ButtonComp = 
-            btn.variant === 'secondary' ? SecondaryButton :
-            btn.variant === 'outline' ? OutlineButton : 
-            PrimaryButton;
-
-          return (
-            <View key={i} style={styles.flex1}>
-              <ButtonComp label={btn.label} onPress={btn.onPress} />
-            </View>
-          );
-        })}
-      </View>
-    </SafeAreaView>
+    <View style={styles.container}>
+      {secondary && (
+        <View style={styles.btnWrapper}>
+          <PrimaryButton {...secondary} variant={secondary.variant || 'outline'} />
+        </View>
+      )}
+      {secondary && primary && <View style={{ width: 12 }} />}
+      {primary && (
+        <View style={styles.btnWrapper}>
+          <PrimaryButton {...primary} variant={primary.variant || 'primary'} />
+        </View>
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { backgroundColor: '#fff' },
-  footer: {
+  container: {
     flexDirection: 'row',
     padding: 16,
-    gap: 12,
+    backgroundColor: '#fff',
     borderTopWidth: 1,
-    borderTopColor: '#eee',
+    borderTopColor: '#e5e7eb',
+    paddingBottom: 24, // extra padding for safe area
   },
-  flex1: { flex: 1 }
+  btnWrapper: { flex: 1 },
 });

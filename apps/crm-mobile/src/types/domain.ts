@@ -83,3 +83,35 @@ export interface VisitPresented {
   createdAt: string;
   // أضف أي حقول أخرى تحتاجها واجهة العرض
 }
+
+export type User = {
+  id: string;
+  email: string;
+  name: string;
+  avatarUrl?: string;
+};
+
+export type Tenant = {
+  id: string;
+  name: string;
+  industry?: string;
+  logoUrl?: string;
+};
+
+export type AuthStatus = 'booting' | 'signedOut' | 'needsTenant' | 'signedIn';
+
+export type Company = {
+  id: string;
+  name: string;
+  role: 'admin' | 'agent';
+};
+
+export type AuthResponse = {
+  token: string;
+  user?: User;
+};
+
+export type ApiError = {
+  message: string;
+  code?: string;
+};

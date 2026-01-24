@@ -1,36 +1,25 @@
-import type { Stage } from '../types/domain';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-export type RootStackParamList = {
-  Splash: undefined; // لاحقًا
-  Language: undefined; // لاحقًا
-  AuthChoice: undefined; // لاحقًا
-  RegisterEmail: undefined; // لاحقًا
-  Login: undefined; // لاحقًا
-  ForgotPassword: undefined; // لاحقًا
-  UploadIdentity: undefined; // لاحقًا
-  CompanySelect: undefined; // لاحقًا
-  RoleInfo: undefined; // لاحقًا
-
-  ClockIn: undefined; // لاحقًا
-  Dashboard: undefined;
-  Break: undefined; // لاحقًا
-  ClockOutSummary: undefined; // لاحقًا
-
-  SelectLead: undefined;
-  StartVisitProof: { leadId: string; source?: 'map' | 'list' };
-  LeadFormCreate: { source?: 'visit' | 'lead' }; // لاحقًا
-  LeadFormEdit: { leadId: string }; // لاحقًا
-  VisitLive: { visitId: string; leadId: string };
-  EndVisitOutcome: { visitId: string; leadId: string }; // لاحقًا
-
-  CreateDeal: { leadId: string; visitId?: string };
-  DiscountApproval: { dealDraftId: string }; // لاحقًا
-  DealDetails: { dealId: string };
-  CreateFollowUp: { leadId?: string; dealId?: string; visitId?: string }; // لاحقًا
-  FollowUpSuccess: { returnTo: 'deal' | 'dashboard'; dealId?: string }; // لاحقًا
-
-  MapView: undefined; // لاحقًا
-  DealsList: { stage?: Stage }; // لاحقًا
-  Profile: undefined;
-  WorkDayDetails: { date: string }; // لاحقًا
+export type AuthStackParamList = {
+  Login: undefined;
+  Register: undefined;
+  ForgotPassword: undefined;
 };
+
+export type AppStackParamList = {
+  TenantSelect: undefined;
+  Dashboard: undefined;
+  Profile: undefined;
+  
+  // ✅ التغيير هنا: إزالة "| undefined" ليعرف TypeScript أن المعاملات اختيارية
+  SelectLead: { selectLeadId?: string }; 
+  
+  NewLead: { prefillName?: string };
+  StartVisitProof: { leadId: string };
+  VisitLive: { visitId: string };
+  EndVisit: { visitId: string };
+  CreateDeal: { leadId: string; visitId?: string };
+  DealDetails: { dealId: string };
+} & AuthStackParamList;
+
+export type ScreenProps<T extends keyof AppStackParamList> = NativeStackScreenProps<AppStackParamList, T>;

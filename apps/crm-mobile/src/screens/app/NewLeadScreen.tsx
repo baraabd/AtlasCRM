@@ -1,14 +1,18 @@
+// apps/crm-mobile/src/screens/app/NewLeadScreen.tsx
+
 import React, { useMemo, useState } from 'react';
-import { StyleSheet, Text, TextInput, View, ScrollView } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { Banner } from '../../components/feedback/Banner';
 import { Screen } from '../../components/layout/Screen';
 import { StickyFooter } from '../../components/layout/StickyFooter';
 import { Card } from '../../components/ui/Card';
 import { useLeadsCtx } from '../../state/LeadsContext';
+import type { ScreenProps } from '../_types';
 
-export function NewLeadScreen({ navigation, route }: any) {
-  const { createLead, loading, error } = useLeadsCtx() as any;
+export function NewLeadScreen({ navigation, route }: ScreenProps<'NewLead'>) {
+  const { create, state, error } = useLeadsCtx();
+
   const [name, setName] = useState(route.params?.prefillName ?? '');
   const [phones, setPhones] = useState('');
   const [businessType, setBusinessType] = useState('');
@@ -16,73 +20,92 @@ export function NewLeadScreen({ navigation, route }: any) {
   const canSubmit = useMemo(() => name.trim().length >= 2, [name]);
 
   async function onSubmit() {
-    console.log("[UI] Submit triggered. Validating inputs...");
-    if (!canSubmit || loading) return;
+    if (!canSubmit || state === 'loading') return;
 
     try {
-      const phonesArr = phones.split(/[,\n]/g).map(p => p.trim()).filter(Boolean);
-      console.log("[UI] Prepared Phone Array:", phonesArr);
+      const phonesArr = phones
+        .split(/[,;\n]/g) // تحسين: دعم الفواصل المختلفة
+        .map((p) => p.trim())
+        .filter(Boolean);
 
-      console.log("[UI] Calling createLead Context function...");
-      const newId = await createLead({
+      const created = await create({
         name: name.trim(),
         businessType: businessType.trim() || undefined,
-        phones: phonesArr.length > 0 ? phonesArr : undefined,
+        phones: phonesArr.length ? phonesArr : undefined,
       });
 
-      console.log(`[UI] ✅ Lead saved successfully. ID: ${newId}. Navigating to SelectLead...`);
-      navigation.navigate('SelectLead', { selectLeadId: newId });
-
-    } catch (e: any) {
-      console.error("[UI] ❌ Error in onSubmit flow:", e.message);
+      // النجاح: نذهب لاختيار العميل الجديد لبدء الزيارة
+      navigation.replace('SelectLead', { selectLeadId: created.id });
+    } catch {
+      // الخطأ يظهر في البانر من الـ Context
     }
   }
 
-  const footer = (
-    <StickyFooter
-      actions={[
-        {
-          label: loading ? 'Saving...' : 'Save Lead',
-          variant: 'primary',
-          disabled: !canSubmit || loading,
-          onPress: () => {
-            console.log("--- Save Button Clicked ---");
-            void onSubmit();
-          },
-        },
-        { label: 'Back', variant: 'outline', onPress: () => navigation.goBack() },
-      ]}
-    />
-  );
-
   return (
-    <Screen footer={footer}>
-      <ScrollView style={styles.container}>
-        {error && <Banner variant="error" text={error} />}
-        <Card>
-          <Text style={styles.title}>Lead info</Text>
-          <View style={styles.field}>
-            <Text style={styles.label}>Business name *</Text>
-            <TextInput value={name} onChangeText={setName} style={styles.input} placeholder="e.g. Cafe Milano" />
-          </View>
-          <View style={styles.field}>
-            <Text style={styles.label}>Business type</Text>
-            <TextInput value={businessType} onChangeText={setBusinessType} style={styles.input} placeholder="e.g. Restaurant" />
-          </View>
-          <View style={styles.field}>
-            <Text style={styles.label}>Phones</Text>
-            <TextInput value={phones} onChangeText={setPhones} style={styles.input} keyboardType="phone-pad" placeholder="Enter phone numbers" />
-          </View>
-        </Card>
-      </ScrollView>
+    <Screen 
+      title="New Lead"
+      footer={
+        <StickyFooter
+          secondary={{
+            label: 'Cancel',
+            variant: 'outline',
+            onPress: () => navigation.goBack(),
+          }}
+          primary={{
+            label: state === 'loading' ? 'Saving...' : 'Save Lead',
+            disabled: !canSubmit || state === 'loading',
+            onPress: onSubmit,
+          }}
+        />
+      }
+    >
+      {state === 'error' && <Banner variant="error" text={error ?? 'Failed to create lead'} />}
+
+      <Card>
+        <Text style={styles.title}>Basic Info</Text>
+
+        <View style={styles.field}>
+          <Text style={styles.label}>Business / Lead Name *</Text>
+          <TextInput
+            value={name}
+            onChangeText={setName}
+            placeholder="e.g. Cafe Milano"
+            style={styles.input}
+            autoFocus
+          />
+        </View>
+
+        <View style={styles.field}>
+          <Text style={styles.label}>Business Type</Text>
+          <TextInput
+            value={businessType}
+            onChangeText={setBusinessType}
+            placeholder="e.g. Restaurant, Clinic"
+            style={styles.input}
+          />
+        </View>
+
+        <View style={styles.field}>
+          <Text style={styles.label}>Phone Numbers</Text>
+          <TextInput
+            value={phones}
+            onChangeText={setPhones}
+            placeholder="+966..., 050... (Separated by comma)"
+            keyboardType="phone-pad"
+            style={styles.input}
+          />
+        </View>
+      </Card>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  title: { fontWeight: '900', fontSize: 18, marginBottom: 8, color: '#111827' },
-  field: { marginTop: 16 },
-  label: { marginBottom: 8, color: '#4b5563', fontWeight: '600' },
-  input: { borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, padding: 14, fontSize: 16, backgroundColor: '#ffffff', color: '#000000' },
+  title: { fontWeight: '800', fontSize: 16, marginBottom: 12, color: '#111827' },
+  field: { marginBottom: 16 },
+  label: { marginBottom: 6, color: '#4b5563', fontSize: 14, fontWeight: '500' },
+  input: {
+    borderWidth: 1, borderColor: '#d1d5db', borderRadius: 8,
+    padding: 12, backgroundColor: '#fff', fontSize: 16,
+  },
 });

@@ -1,41 +1,25 @@
 // apps/crm-mobile/src/infra/api/api.ts
+
 import axios from 'axios';
 import { Platform } from 'react-native';
 
+// ⚠️⚠️ نفس الـ IP هنا أيضاً ⚠️⚠️
+const MY_PC_IP = '192.168.68.58'; // استبدله بـ IP جهازك
+
 const getBaseUrl = () => {
   if (process.env.EXPO_PUBLIC_API_URL) return process.env.EXPO_PUBLIC_API_URL;
-  
-  return Platform.select({
-    android: 'http://10.0.2.2:3000',
-    ios: 'http://localhost:3000',
-    default: 'http://localhost:3000',
-  });
+  // استخدام IP الشبكة الموحد
+  return `http://${MY_PC_IP}:3000`;
 };
 
 export const api = axios.create({
   baseURL: getBaseUrl(),
   timeout: 15000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
 
-export async function getHealth(): Promise<string> {
-  try {
-    const response = await api.get('/health', { 
-      timeout: 2000,
-      validateStatus: (status) => status < 500 
-    });
+console.log(`🌐 [API] Configured to connect to: ${getBaseUrl()}`);
 
-    if (response.status === 404) return 'Not Configured';
-    return response.data?.status || 'OK';
-  } catch {
-    // ✅ تم حذف _error لإصلاح خطأ ESLint
-    return 'Offline';
-  }
-}
-
-api.interceptors.response.use(
-  res => res,
-  err => {
-    console.error('🌐 API Error:', err.response?.data || err.message);
-    return Promise.reject(err);
-  }
-);
+// ... (باقي الدوال مثل getHealth يمكن إضافتها هنا إذا كانت موجودة سابقاً)

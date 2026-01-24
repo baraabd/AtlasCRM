@@ -1,28 +1,40 @@
+// apps/crm-mobile/src/components/layout/Screen.tsx
+
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, StyleSheet, Text, KeyboardAvoidingView, Platform, SafeAreaView, StatusBar } from 'react-native';
 
-type Props = {
+type ScreenProps = {
   children: React.ReactNode;
-  footer?: React.ReactNode;
-
-  // نتركها للـ API الحالي في الشاشات لكن لا نستخدمها داخل الـ UI
-  // حتى لا يظهر عنوانين (Navigation header + عنوان داخلي)
   title?: string;
-  right?: React.ReactNode;
+  footer?: React.ReactNode;
 };
 
-export function Screen({ children, footer, title: _title, right: _right }: Props) {
+export function Screen({ children, title, footer }: ScreenProps) {
   return (
-    <SafeAreaView style={styles.safe}>
-      <View style={styles.body}>{children}</View>
-      {footer ? <View style={styles.footer}>{footer}</View> : null}
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="dark-content" backgroundColor="#f3f4f6" />
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.container}
+      >
+        <View style={styles.content}>
+          {title && <Text style={styles.title}>{title}</Text>}
+          {children}
+        </View>
+        
+        {footer && <View style={styles.footerWrapper}>{footer}</View>}
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#fff' },
-  body: { flex: 1, padding: 16 },
-  footer: { borderTopWidth: 1, borderTopColor: '#f1f5f9', padding: 16 },
+  safeArea: { flex: 1, backgroundColor: '#f3f4f6' },
+  container: { flex: 1 },
+  content: { flex: 1, padding: 16 },
+  title: { fontSize: 24, fontWeight: 'bold', color: '#111827', marginBottom: 16 },
+  footerWrapper: {
+    // يضمن أن الفوتر يظهر فوق المحتوى إذا لزم الأمر
+    backgroundColor: 'transparent',
+  }
 });

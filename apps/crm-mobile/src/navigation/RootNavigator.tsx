@@ -1,4 +1,4 @@
-import { NavigationContainer } from '@react-navigation/native';
+/* import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React from 'react';
 
@@ -37,3 +37,76 @@ export function RootNavigator() {
     </NavigationContainer>
   );
 }
+ */
+
+
+// apps/crm-mobile/src/navigation/RootNavigator.tsx
+
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import React from 'react';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
+
+import type { AppStackParamList } from '../screens/_types';
+
+// Auth Screens
+
+// App Screens
+import { DashboardScreen } from '../screens/app/DashboardScreen';
+import { NewLeadScreen } from '../screens/app/NewLeadScreen';
+import { SelectLeadScreen } from '../screens/app/SelectLeadScreen';
+import { ForgotPasswordScreen } from '../screens/auth/ForgotPasswordScreen';
+import { LoginScreen } from '../screens/auth/LoginScreen';
+import { RegisterScreen } from '../screens/auth/RegisterScreen';
+import { TenantSelectScreen } from '../screens/auth/TenantSelectScreen';
+import { useAuth } from '../state/AuthContext';
+// ... import other screens
+
+const Stack = createNativeStackNavigator<AppStackParamList>();
+
+export function RootNavigator() {
+  const { state } = useAuth();
+
+  if (state.status === 'booting') {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color="#2563eb" />
+      </View>
+    );
+  }
+
+  return (
+    <NavigationContainer>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        
+        {state.status === 'signedOut' ? (
+          <Stack.Group>
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="Register" component={RegisterScreen} />
+            <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+          </Stack.Group>
+        ) : state.status === 'needsTenant' ? (
+          <Stack.Group screenOptions={{ presentation: 'fullScreenModal', headerShown: true }}>
+            <Stack.Screen 
+              name="TenantSelect" 
+              component={TenantSelectScreen} 
+              options={{ title: 'Select Organization', headerLeft: () => null }} 
+            />
+          </Stack.Group>
+        ) : (
+          <Stack.Group screenOptions={{ headerShown: true }}>
+             <Stack.Screen name="Dashboard" component={DashboardScreen} />
+             <Stack.Screen name="SelectLead" component={SelectLeadScreen} />
+             <Stack.Screen name="NewLead" component={NewLeadScreen} />
+             {/* Add other screens here */}
+          </Stack.Group>
+        )}
+        
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+}
+
+const styles = StyleSheet.create({
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' },
+});

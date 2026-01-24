@@ -1,23 +1,35 @@
+// apps/crm-mobile/src/components/ui/Card.tsx
+
 import React from 'react';
 import type { ViewStyle } from 'react-native';
 import { View, StyleSheet } from 'react-native';
 
-export function Card({
-  children,
-  style,
-}: {
-  children?: React.ReactNode;      // ✅ أصبح اختياري
-  style?: ViewStyle | ViewStyle[]; // اختياري
-}) {
-  return <View style={[styles.card, style]}>{children}</View>;
+type Props = {
+  children: React.ReactNode;
+  style?: ViewStyle;
+  variant?: 'default' | 'flat';
+};
+
+export function Card({ children, style, variant = 'default' }: Props) {
+  return (
+    <View style={[styles.base, variant === 'default' && styles.shadow, style]}>
+      {children}
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
+  base: {
     backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 12,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+  },
+  shadow: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
   },
 });

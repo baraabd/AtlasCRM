@@ -1,40 +1,50 @@
+// apps/crm-mobile/src/components/feedback/Banner.tsx
+
 import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 
-type Variant = 'info' | 'warning' | 'error' | 'offline' | 'success';
+type Variant = 'info' | 'success' | 'warning' | 'error' | 'offline';
 
-const tones: Record<Variant, { bg: string; text: string; border: string }> = {
-  info: { bg: '#eff6ff', text: '#1e3a8a', border: '#bfdbfe' },
-  warning: { bg: '#fffbeb', text: '#92400e', border: '#fde68a' },
-  error: { bg: '#fef2f2', text: '#991b1b', border: '#fecaca' },
-  offline: { bg: '#f3f4f6', text: '#111827', border: '#e5e7eb' },
-  success: { bg: '#ecfdf5', text: '#065f46', border: '#a7f3d0' },
+type Props = {
+  text: string;
+  variant?: Variant;
+  action?: { label: string; onPress: () => void };
 };
 
-export function Banner({
-  variant,
-  text,
-  action,
-}: {
-  variant: Variant;
-  text: string;
-  action?: { label: string; onPress: () => void };
-}) {
-  const t = tones[variant];
+export function Banner({ text, variant = 'info', action }: Props) {
   return (
-    <View style={[styles.root, { backgroundColor: t.bg, borderColor: t.border }]}>
-      <Text style={[styles.text, { color: t.text }]}>{text}</Text>
-      {action ? (
-        <Pressable onPress={action.onPress}>
-          <Text style={[styles.action, { color: t.text }]}>{action.label}</Text>
-        </Pressable>
-      ) : null}
+    <View style={[styles.container, styles[variant]]}>
+      <Text style={[styles.text, styles[`${variant}Text`]]}>{text}</Text>
+      {action && (
+        <TouchableOpacity onPress={action.onPress} style={styles.actionBtn}>
+          <Text style={[styles.actionText, styles[`${variant}Text`]]}>{action.label}</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { padding: 12, borderWidth: 1, borderRadius: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
-  text: { flex: 1, fontSize: 14, fontWeight: '500' },
-  action: { fontSize: 14, fontWeight: '700' },
+  container: {
+    padding: 12, borderRadius: 8, marginBottom: 16, flexDirection: 'row',
+    alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap',
+  },
+  text: { fontSize: 14, fontWeight: '500', flex: 1 },
+  actionBtn: { marginLeft: 8 },
+  actionText: { fontWeight: '700', textDecorationLine: 'underline' },
+  
+  info: { backgroundColor: '#eff6ff' },
+  infoText: { color: '#1e40af' },
+  
+  success: { backgroundColor: '#f0fdf4' },
+  successText: { color: '#166534' },
+  
+  warning: { backgroundColor: '#fefce8' },
+  warningText: { color: '#854d0e' },
+  
+  error: { backgroundColor: '#fef2f2' },
+  errorText: { color: '#991b1b' },
+  
+  offline: { backgroundColor: '#374151' },
+  offlineText: { color: '#f3f4f6' },
 });
