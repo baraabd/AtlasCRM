@@ -24,8 +24,8 @@ export function LeadsProvider({ children }: { children: React.ReactNode }) {
     try {
       const data = await listLeads();
       setLeads(data);
-    } catch (e) {
-      console.error(e);
+    } catch { 
+      // ✅ تم حذف (e) لأنه غير مستخدم هنا لتفادي أخطاء Lint
       setError('Failed to load leads from database');
     } finally {
       setLoading(false);
@@ -34,7 +34,7 @@ export function LeadsProvider({ children }: { children: React.ReactNode }) {
 
   // تحميل البيانات عند البدء
   useEffect(() => {
-    refreshLeads();
+    void refreshLeads();
   }, [refreshLeads]);
 
   const create = async (data: { name: string; businessType?: string; phones?: string[] }): Promise<Lead> => {
@@ -51,7 +51,7 @@ export function LeadsProvider({ children }: { children: React.ReactNode }) {
       await refreshLeads();
 
       // 3. محاولة المزامنة في الخلفية (إذا كان متصلاً)
-      runSyncWithRetry(1).catch(err => console.log('Background sync failed, queued for later.'));
+      runSyncWithRetry(1).catch(() => console.log('Background sync queued.'));
 
       // إرجاع كائن العميل الجديد
       return { 
@@ -61,9 +61,10 @@ export function LeadsProvider({ children }: { children: React.ReactNode }) {
         phones: data.phones 
       } as Lead;
 
-    } catch (e) {
+    } catch { 
+      // ✅ تم حذف المتغير غير المستخدم في catch
       setError('Failed to create lead');
-      throw e;
+      throw new Error('Create failed'); // إعادة رمي الخطأ لتنبيه الواجهة
     } finally {
       setLoading(false);
     }

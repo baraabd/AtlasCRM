@@ -7,7 +7,8 @@ import { TouchableOpacity, Text, StyleSheet, ActivityIndicator } from 'react-nat
 type Props = {
   label: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'outline';
+  // ✅ 1. توسيع الأنواع هنا لتطابق StickyFooter
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
   disabled?: boolean;
   loading?: boolean;
   style?: ViewStyle;
@@ -15,7 +16,13 @@ type Props = {
 
 export function PrimaryButton({ label, onPress, variant = 'primary', disabled, loading, style }: Props) {
   const baseStyle = styles[variant];
-  const textStyle = styles[`${variant}Text`];
+  // استخدام "as any" هنا مؤقتاً لتجنب تعقيدات الـ Index Signature في TypeScript مع الستايلات الديناميكية
+  // أو ببساطة التأكد أن كل variant له Text style مقابل
+  const textStyle = styles[`${variant}Text` as keyof typeof styles];
+
+  // تحديد لون التحميل بناءً على الخلفية
+  const isDarkBg = variant === 'primary' || variant === 'danger';
+  const loaderColor = isDarkBg ? '#ffffff' : '#2563eb';
 
   return (
     <TouchableOpacity
@@ -30,7 +37,7 @@ export function PrimaryButton({ label, onPress, variant = 'primary', disabled, l
       activeOpacity={0.8}
     >
       {loading ? (
-        <ActivityIndicator color={variant === 'outline' ? '#2563eb' : '#fff'} />
+        <ActivityIndicator color={loaderColor} />
       ) : (
         <Text style={[styles.textBase, textStyle, disabled && styles.disabledText]}>
           {label}
@@ -62,7 +69,15 @@ const styles = StyleSheet.create({
   outline: { backgroundColor: 'transparent', borderWidth: 1, borderColor: '#d1d5db' },
   outlineText: { color: '#374151' },
 
+  // ✅ Ghost (بدون خلفية أو حدود)
+  ghost: { backgroundColor: 'transparent' },
+  ghostText: { color: '#6b7280' },
+
+  // ✅ Danger (للأزرار الخطرة مثل الحذف أو الإنهاء)
+  danger: { backgroundColor: '#dc2626' }, // Red-600
+  dangerText: { color: '#ffffff' },
+
   // Disabled
-  disabled: { backgroundColor: '#9ca3af', borderColor: '#9ca3af' },
-  disabledText: { color: '#e5e7eb' },
+  disabled: { backgroundColor: '#f3f4f6', borderColor: '#e5e7eb', borderWidth: 1 },
+  disabledText: { color: '#9ca3af' },
 });

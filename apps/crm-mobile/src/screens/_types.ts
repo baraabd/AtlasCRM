@@ -1,4 +1,4 @@
-// apps/crm-mobile/src/screens/_types.ts
+// apps/crm-mobile/src/navigation/types.ts
 
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
@@ -13,14 +13,17 @@ export type AppStackParamList = {
   Dashboard: undefined;
   Profile: undefined;
   
-  // ✅✅ التغيير الجذري هنا: أضفنا "| undefined" بشكل صريح
-  SelectLead: { selectLeadId?: string } | undefined;
+  // ✅ إضافة returnTo و selectLeadId
+  SelectLead: { selectLeadId?: string; returnTo?: string };
   
-  NewLead: { prefillName?: string } | undefined;
-  StartVisitProof: { leadId: string };
-  VisitLive: { visitId: string };
-  EndVisit: { visitId: string };
-  CreateDeal: { leadId: string; visitId?: string };
+  // ✅ إضافة prefillName و returnTo
+  NewLead: { prefillName?: string; returnTo?: string };
+  
+  // ✅ إضافة البراميترات الناقصة
+  StartVisitProof: { leadId: string; source?: string };
+  VisitLive: { visitId: string; leadId: string };
+  EndVisit: { visitId: string; leadId: string };
+  CreateDeal: { leadId: string; visitId: string };
   DealDetails: { dealId: string };
 } & AuthStackParamList;
 

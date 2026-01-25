@@ -26,7 +26,7 @@ export function VisitLiveScreen({ navigation, route }: ScreenProps<'VisitLive'>)
   const right = (
     <OutlineButton
       label="End"
-      onPress={() => navigation.navigate('SelectLead')}
+      onPress={() => navigation.navigate('SelectLead', {})}
     />
   );
 

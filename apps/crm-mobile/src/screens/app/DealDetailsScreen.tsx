@@ -61,12 +61,6 @@ export function DealDetailsScreen({ navigation, route }: ScreenProps<'DealDetail
   return (
     <Screen title="Deal Details" right={right}>
       <Card>
-        <Card>
-          {/* double Card is not necessary; keep one if you prefer */}
-        </Card>
-      </Card>
-
-      <Card>
         <Banner variant="info" text={`Lead: ${details.deal.leadName}`} />
       </Card>
 

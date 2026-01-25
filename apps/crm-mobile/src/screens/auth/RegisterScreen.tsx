@@ -56,15 +56,7 @@ export function RegisterScreen({ navigation }: ScreenProps<'Register'>) {
     setLocalError(null);
 
     try {
-      // ❌ التغيير هنا: بدلاً من FormData المعقد، سنرسل JSON بسيط
-      /*
-      const formData = new FormData();
-      formData.append('fullName', fullName.trim());
-      formData.append('email', email.trim().toLowerCase());
-      formData.append('password', password);
-      if (avatar) { ... }
-      */
-
+     
       // ✅ الحل: إرسال كائن عادي (JSON)
       const payload = {
         fullName: fullName.trim(),
@@ -128,7 +120,7 @@ export function RegisterScreen({ navigation }: ScreenProps<'Register'>) {
         <Banner variant="error" text={localError || state.error || 'Unknown error'} />
       )}
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
+      <ScrollView contentContainerStyle={ styles.scrollContent }>
         {step === 'basic' ? (
           <Card>
             <Text style={styles.sectionTitle}>Basic Information</Text>
@@ -192,6 +184,7 @@ export function RegisterScreen({ navigation }: ScreenProps<'Register'>) {
 }
 
 const styles = StyleSheet.create({
+  scrollContent: { paddingBottom: 20 },
   sectionTitle: { fontWeight: '900', fontSize: 18, color: '#111827' },
   subText: { marginTop: 4, color: '#6b7280', fontSize: 14, marginBottom: 20 },
   field: { marginTop: 16 },

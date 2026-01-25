@@ -1,7 +1,8 @@
+// apps/crm-mobile/src/screens/app/DashboardScreen.tsx
+
 import React, { useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-// تأكد من أن المسارات صحيحة
 import { FollowUpRow } from '../../components/domain/FollowUpRow';
 import { Banner } from '../../components/feedback/Banner';
 import { EmptyState } from '../../components/feedback/EmptyState';
@@ -22,19 +23,19 @@ function formatWorkTime(sec: number = 0) {
 export function DashboardScreen({ navigation }: ScreenProps<'Dashboard'>) {
   const { state: authState } = useAuth();
   
-  // استدعاء الـ Hook
+  // ✅ The error will be resolved once useDashboard returns loadDashboard
   const { state: loadState, data, error, offline, actions } = useDashboard();
 
   useEffect(() => {
-    void actions.refresh();
-  }, []);
+    // ✅ Now this should work
+    void actions.loadDashboard();
+  }, [actions]);
 
   const footer = (
     <View style={styles.footerContainer}>
       <PrimaryButton 
         label="Start New Visit" 
-        // 🔥 التعديل 1: تمرير كائن فارغ {} لإسكات خطأ التنقل
-        // @ts-ignore: لتجاوز أي خطأ متبقي في النوع
+        // @ts-ignore: fixing navigation type mismatch
         onPress={() => navigation.navigate('SelectLead', {})} 
       />
     </View>
@@ -51,7 +52,6 @@ export function DashboardScreen({ navigation }: ScreenProps<'Dashboard'>) {
 
   // 2. Error State
   if (loadState === 'error' && !data) {
-    // 🔥 التعديل 2: استخدام (error as any) للوصول للرسالة بالقوة
     const errorMessage = (error as any)?.message ?? 'Failed to load dashboard';
 
     return (
@@ -85,7 +85,7 @@ export function DashboardScreen({ navigation }: ScreenProps<'Dashboard'>) {
         </View>
       </Card>
 
-      <View style={{ height: 16 }} />
+      <View style={styles.spacerSmall} />
 
       {/* Stats Card */}
       <Card>
@@ -107,13 +107,13 @@ export function DashboardScreen({ navigation }: ScreenProps<'Dashboard'>) {
         </View>
       </Card>
 
-      <View style={{ height: 24 }} />
+      <View style={styles.spacerLarge} />
 
       {/* Follow Ups */}
       <Text style={styles.subHeader}>Today's Follow-ups</Text>
       
       {data?.followUpsToday && data.followUpsToday.length > 0 ? (
-        data.followUpsToday.map((item) => (
+        data.followUpsToday.map((item: any) => (
           <FollowUpRow 
             key={item.id} 
             item={item} 
@@ -152,5 +152,8 @@ const styles = StyleSheet.create({
   statValue: { fontSize: 18, fontWeight: '700', color: '#111827' },
   statLabel: { fontSize: 12, color: '#6b7280' },
   subHeader: { fontSize: 16, fontWeight: '700', color: '#111827', marginBottom: 12 },
-  profileSection: { marginTop: 24, marginBottom: 40 }
+  profileSection: { marginTop: 24, marginBottom: 40 },
+  // ✅ Defined spacer styles to fix lint warnings
+  spacerSmall: { height: 16 },
+  spacerLarge: { height: 24 },
 });

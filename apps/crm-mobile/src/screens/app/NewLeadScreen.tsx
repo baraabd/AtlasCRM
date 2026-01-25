@@ -11,7 +11,8 @@ import { useLeadsCtx } from '../../state/LeadsContext';
 import type { ScreenProps } from '../_types';
 
 export function NewLeadScreen({ navigation, route }: ScreenProps<'NewLead'>) {
-  const { create, state, error } = useLeadsCtx();
+  // ✅ التصحيح: استبدال state بـ loading
+  const { create, loading, error } = useLeadsCtx();
 
   const [name, setName] = useState(route.params?.prefillName ?? '');
   const [phones, setPhones] = useState('');
@@ -20,11 +21,12 @@ export function NewLeadScreen({ navigation, route }: ScreenProps<'NewLead'>) {
   const canSubmit = useMemo(() => name.trim().length >= 2, [name]);
 
   async function onSubmit() {
-    if (!canSubmit || state === 'loading') return;
+    // ✅ استخدام loading بدلاً من state === 'loading'
+    if (!canSubmit || loading) return;
 
     try {
       const phonesArr = phones
-        .split(/[,;\n]/g) // تحسين: دعم الفواصل المختلفة
+        .split(/[,;\n]/g)
         .map((p) => p.trim())
         .filter(Boolean);
 
@@ -34,10 +36,9 @@ export function NewLeadScreen({ navigation, route }: ScreenProps<'NewLead'>) {
         phones: phonesArr.length ? phonesArr : undefined,
       });
 
-      // النجاح: نذهب لاختيار العميل الجديد لبدء الزيارة
       navigation.replace('SelectLead', { selectLeadId: created.id });
     } catch {
-      // الخطأ يظهر في البانر من الـ Context
+      // Error handled by context
     }
   }
 
@@ -46,24 +47,28 @@ export function NewLeadScreen({ navigation, route }: ScreenProps<'NewLead'>) {
       title="New Lead"
       footer={
         <StickyFooter
-          secondary={{
-            label: 'Cancel',
-            variant: 'outline',
-            onPress: () => navigation.goBack(),
-          }}
-          primary={{
-            label: state === 'loading' ? 'Saving...' : 'Save Lead',
-            disabled: !canSubmit || state === 'loading',
-            onPress: onSubmit,
-          }}
+          // ✅ تحويل الأزرار إلى صيغة actions[] المتوافقة مع StickyFooter الجديد
+          actions={[
+             {
+                label: loading ? 'Saving...' : 'Save Lead',
+                variant: 'primary',
+                disabled: !canSubmit || loading,
+                onPress: onSubmit,
+             },
+             {
+                label: 'Cancel',
+                variant: 'outline',
+                onPress: () => navigation.goBack(),
+             }
+          ]}
         />
       }
     >
-      {state === 'error' && <Banner variant="error" text={error ?? 'Failed to create lead'} />}
+      {/* ✅ استخدام error مباشرة */}
+      {!!error && <Banner variant="error" text={error} />}
 
       <Card>
         <Text style={styles.title}>Basic Info</Text>
-
         <View style={styles.field}>
           <Text style={styles.label}>Business / Lead Name *</Text>
           <TextInput
@@ -74,7 +79,6 @@ export function NewLeadScreen({ navigation, route }: ScreenProps<'NewLead'>) {
             autoFocus
           />
         </View>
-
         <View style={styles.field}>
           <Text style={styles.label}>Business Type</Text>
           <TextInput
@@ -84,7 +88,6 @@ export function NewLeadScreen({ navigation, route }: ScreenProps<'NewLead'>) {
             style={styles.input}
           />
         </View>
-
         <View style={styles.field}>
           <Text style={styles.label}>Phone Numbers</Text>
           <TextInput

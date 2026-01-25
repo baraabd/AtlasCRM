@@ -1,32 +1,70 @@
 // apps/crm-mobile/src/screens/app/ProfileScreen.tsx
+
 import React from 'react';
-import { Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 
 import { Screen } from '../../components/layout/Screen';
 import { Card } from '../../components/ui/Card';
 import { PrimaryButton } from '../../components/ui/PrimaryButton';
-import type { ScreenProps } from '../../screens/_types';
+import { useAuth } from '../../state/AuthContext';
+import type { ScreenProps } from '../_types'; 
 
 export function ProfileScreen({ navigation }: ScreenProps<'Profile'>) {
+  const { state, actions } = useAuth();
+
   return (
     <Screen title="Profile">
       <Card>
-        <Text style={styles.userName}>Baraa</Text>
-        <Text style={styles.userRole}>Role: Agent</Text>
+        <Text style={styles.sectionTitle}>User Info</Text>
+        
+        <View style={styles.row}>
+          <Text style={styles.label}>Name</Text>
+          <Text style={styles.value}>{state.user?.name || '—'}</Text>
+        </View>
+
+        <View style={styles.separator} />
+
+        <View style={styles.row}>
+          <Text style={styles.label}>Email</Text>
+          <Text style={styles.value}>{state.user?.email || '—'}</Text>
+        </View>
+        
+        <View style={styles.separator} />
+
+        <View style={styles.row}>
+            <Text style={styles.label}>Organization</Text>
+            <Text style={styles.value}>
+                {state.tenants.find(t => t.id === state.tenantId)?.name || '—'}
+            </Text>
+        </View>
       </Card>
 
-      <PrimaryButton label="Back to Dashboard" onPress={() => navigation.navigate('Dashboard')} />
+      <View style={styles.spacer} />
+
+      <PrimaryButton 
+        label="Go Back" 
+        variant="secondary" 
+        onPress={() => navigation.goBack()} 
+      />
+
+      {/* ✅ استخدام الستايل المعرف بدلاً من inline */}
+      <View style={styles.buttonSpacer} />
+
+      <PrimaryButton 
+        label="Logout" 
+        variant="outline" 
+        onPress={() => actions.logout()} 
+      />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  userName: { 
-    fontSize: 18, 
-    fontWeight: '900' 
-  },
-  userRole: { 
-    marginTop: 6, 
-    color: '#6b7280' 
-  },
+  sectionTitle: { fontSize: 18, fontWeight: '800', marginBottom: 16, color: '#111827' },
+  row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8 },
+  label: { color: '#6b7280', fontSize: 14 },
+  value: { fontWeight: '600', color: '#111827', fontSize: 14 },
+  separator: { height: 1, backgroundColor: '#f3f4f6', marginVertical: 8 },
+  spacer: { height: 24 },
+  buttonSpacer: { height: 12 }, // ✅ الستايل الجديد
 });

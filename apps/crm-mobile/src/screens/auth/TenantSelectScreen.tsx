@@ -24,7 +24,7 @@ export function TenantSelectScreen({}: ScreenProps<'TenantSelect'>) {
     setSelectingId(tenantId);
     try {
       await actions.selectTenant(tenantId);
-    } catch (e) {
+    } catch { // ✅ تم تجاهل المتغير
       setSelectingId(null);
     }
   };
@@ -65,7 +65,11 @@ export function TenantSelectScreen({}: ScreenProps<'TenantSelect'>) {
               onPress={() => handleSelect(tenant.id)}
               disabled={!!selectingId}
             >
-              <Card style={[styles.card, selectingId === tenant.id && styles.cardActive]}>
+              {/* ✅ الآن Card يقبل المصفوفة بدون مشاكل */}
+              <Card style={[
+                styles.card, 
+                selectingId === tenant.id && styles.cardActive
+              ]}>
                 <View style={styles.cardContent}>
                   <View>
                     <Text style={styles.name}>{tenant.name}</Text>

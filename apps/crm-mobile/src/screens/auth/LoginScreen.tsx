@@ -24,9 +24,7 @@ export function LoginScreen({ navigation }: ScreenProps<'Login'>) {
     setIsLoading(true);
     try {
       await actions.login({ email: email.trim().toLowerCase(), password });
-      // Navigation is handled automatically by AuthState change
-    } catch (e) {
-      // Error is handled in Context state
+    } catch { // ✅ تجاهل الخطأ غير المستخدم
       setIsLoading(false);
     }
   }

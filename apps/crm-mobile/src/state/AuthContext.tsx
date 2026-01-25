@@ -1,8 +1,9 @@
+// apps/crm-mobile/src/state/AuthContext.tsx
+
 import React, { createContext, useContext, useEffect, useReducer, useMemo } from 'react';
 
-import { authApi, type LoginInput } from '../infra/api/auth';
+import { authApi, type LoginInput, type RegisterInput } from '../infra/api/auth';
 import { setHttpAuthToken, setHttpTenantId } from '../infra/api/http';
-import { tenantsApi } from '../infra/api/tenants';
 import {
   getToken, saveToken, clearAuthData,
   getTenantId, saveTenantId, clearTenantId,
@@ -71,7 +72,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     (async () => {
       try {
-        // تهيئة قاعدة البيانات المحلية عند بدء التشغيل
         await initDb();
         await runMigrations();
 
@@ -105,7 +105,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         dispatch({ type: 'SET_ERROR', error: null });
         
-        // الاتصال الحقيقي بالسيرفر
         const res = await authApi.login(input);
         
         await saveToken(res.token);
@@ -127,7 +126,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     },
 
-    register: async (input: FormData) => {
+    // ✅ تم التعديل هنا: استخدام RegisterInput بدلاً من FormData
+    register: async (input: RegisterInput) => {
       try {
         dispatch({ type: 'SET_ERROR', error: null });
         const res = await authApi.register(input);
@@ -146,14 +146,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     loadTenants: async () => {
       try {
-        // يمكن جلب الشركات من السيرفر، أو إذا كان المستخدم مرتبط بشركة واحدة فقط
-        // يمكن تخطي هذه الخطوة أو جعلها وهمية مؤقتاً إذا لم يكن هناك Multi-tenancy API جاهز
-        // هنا سنفترض أن المستخدم لديه شركة واحدة من التسجيل
         const fakeTenants: Tenant[] = [
             { id: 't1', name: 'My Organization', industry: 'General' },
         ];
         dispatch({ type: 'SET_TENANTS', tenants: fakeTenants });
-      } catch (e: any) {
+      } catch { // ✅ تجاهل المتغير غير المستخدم
         dispatch({ type: 'SET_ERROR', error: 'Failed to load organizations' });
       }
     },
@@ -163,7 +160,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await saveTenantId(id);
         setHttpTenantId(id);
         dispatch({ type: 'SELECT_TENANT', tenantId: id });
-      } catch (e: any) {
+      } catch { // ✅ تجاهل المتغير غير المستخدم
         dispatch({ type: 'SET_ERROR', error: 'Failed to select organization' });
       }
     },

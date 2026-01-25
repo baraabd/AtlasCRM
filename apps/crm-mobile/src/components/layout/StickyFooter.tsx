@@ -5,31 +5,50 @@ import { View, StyleSheet } from 'react-native';
 
 import { PrimaryButton } from '../ui/PrimaryButton';
 
-type Action = {
+export type Action = {
   label: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'outline';
+  // ✅ الآن هذا النوع متطابق تماماً مع PrimaryButton
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
   disabled?: boolean;
   loading?: boolean;
 };
 
-type Props = {
+export type StickyFooterProps = {
   primary?: Action;
   secondary?: Action;
+  actions?: Action[]; 
 };
 
-export function StickyFooter({ primary, secondary }: Props) {
+export function StickyFooter({ primary, secondary, actions }: StickyFooterProps) {
+  // المنطق: إذا تم تمرير actions، الزر الأول هو الرئيسي (يمين)، والثاني هو الثانوي (يسار)
+  const mainAction = primary || (actions && actions[0]);
+  const subAction = secondary || (actions && actions[1]);
+
   return (
     <View style={styles.container}>
-      {secondary && (
+      {/* الزر الثانوي (على اليسار) */}
+      {subAction && (
         <View style={styles.btnWrapper}>
-          <PrimaryButton {...secondary} variant={secondary.variant || 'outline'} />
+          <PrimaryButton 
+            {...subAction} 
+            // إذا لم يتم تحديد variant، نستخدم 'outline' للزر الثانوي
+            variant={subAction.variant || 'outline'} 
+          />
         </View>
       )}
-      {secondary && primary && <View style={{ width: 12 }} />}
-      {primary && (
+
+      {/* مسافة بين الزرين */}
+      {subAction && mainAction && <View style={styles.spacer} />}
+
+      {/* الزر الرئيسي (على اليمين) */}
+      {mainAction && (
         <View style={styles.btnWrapper}>
-          <PrimaryButton {...primary} variant={primary.variant || 'primary'} />
+          <PrimaryButton 
+            {...mainAction} 
+            // إذا لم يتم تحديد variant، نستخدم 'primary' للزر الرئيسي
+            variant={mainAction.variant || 'primary'} 
+          />
         </View>
       )}
     </View>
@@ -43,7 +62,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderTopWidth: 1,
     borderTopColor: '#e5e7eb',
-    paddingBottom: 24, // extra padding for safe area
+    paddingBottom: 24, 
   },
   btnWrapper: { flex: 1 },
+  spacer: { width: 12 },
 });

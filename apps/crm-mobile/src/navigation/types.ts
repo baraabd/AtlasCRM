@@ -1,3 +1,5 @@
+// apps/crm-mobile/src/navigation/types.ts
+
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 export type AuthStackParamList = {
@@ -11,14 +13,16 @@ export type AppStackParamList = {
   Dashboard: undefined;
   Profile: undefined;
   
-  // ✅ التغيير هنا: إزالة "| undefined" ليعرف TypeScript أن المعاملات اختيارية
-  SelectLead: { selectLeadId?: string }; 
+  // ✅ تحديث الأنواع لتكون دقيقة
+  SelectLead: { selectLeadId?: string; returnTo?: string };
   
-  NewLead: { prefillName?: string };
-  StartVisitProof: { leadId: string };
-  VisitLive: { visitId: string };
-  EndVisit: { visitId: string };
-  CreateDeal: { leadId: string; visitId?: string };
+  NewLead: { prefillName?: string; returnTo?: string };
+  
+  // ✅ إضافة البراميترات الناقصة حسب الأخطاء التي ظهرت
+  StartVisitProof: { leadId: string; source?: string };
+  VisitLive: { visitId: string; leadId: string };
+  EndVisit: { visitId: string; leadId: string };
+  CreateDeal: { leadId: string; visitId: string };
   DealDetails: { dealId: string };
 } & AuthStackParamList;
 
