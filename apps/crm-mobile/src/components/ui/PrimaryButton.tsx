@@ -1,45 +1,67 @@
-// apps/crm-mobile/src/components/ui/PrimaryButton.tsx
-
 import React from 'react';
-import type { ViewStyle } from 'react-native';
+import type { ViewStyle, TextStyle } from 'react-native';
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator } from 'react-native';
 
 type Props = {
   label: string;
   onPress: () => void;
-  // ✅ 1. توسيع الأنواع هنا لتطابق StickyFooter
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
   disabled?: boolean;
   loading?: boolean;
   style?: ViewStyle;
 };
 
-export function PrimaryButton({ label, onPress, variant = 'primary', disabled, loading, style }: Props) {
-  const baseStyle = styles[variant];
-  // استخدام "as any" هنا مؤقتاً لتجنب تعقيدات الـ Index Signature في TypeScript مع الستايلات الديناميكية
-  // أو ببساطة التأكد أن كل variant له Text style مقابل
-  const textStyle = styles[`${variant}Text` as keyof typeof styles];
+const COLORS = {
+  primary: '#F36E27', // Jibble Orange
+  white: '#FFFFFF',
+  grayBorder: '#E5E7EB',
+  textMain: '#374151',
+  textGhost: '#6B7280',
+  danger: '#DC2626',
+};
 
-  // تحديد لون التحميل بناءً على الخلفية
-  const isDarkBg = variant === 'primary' || variant === 'danger';
-  const loaderColor = isDarkBg ? '#ffffff' : '#2563eb';
+export function PrimaryButton({ label, onPress, variant = 'primary', disabled, loading, style }: Props) {
+  let btnStyle: ViewStyle = {};
+  let txtStyle: TextStyle = {};
+  let loaderColor = COLORS.white;
+
+  switch (variant) {
+    case 'primary':
+      btnStyle = { backgroundColor: COLORS.primary, borderWidth: 0 };
+      txtStyle = { color: COLORS.white };
+      break;
+    case 'secondary':
+      btnStyle = { backgroundColor: '#FFF7ED' }; // Light Orange
+      txtStyle = { color: COLORS.primary };
+      loaderColor = COLORS.primary;
+      break;
+    case 'outline':
+      btnStyle = { backgroundColor: 'transparent', borderWidth: 1, borderColor: COLORS.grayBorder };
+      txtStyle = { color: COLORS.textMain };
+      loaderColor = COLORS.textMain;
+      break;
+    case 'ghost':
+      btnStyle = { backgroundColor: 'transparent', borderWidth: 0 };
+      txtStyle = { color: COLORS.textGhost };
+      loaderColor = COLORS.primary;
+      break;
+    case 'danger':
+      btnStyle = { backgroundColor: COLORS.danger };
+      txtStyle = { color: COLORS.white };
+      break;
+  }
 
   return (
     <TouchableOpacity
       onPress={onPress}
       disabled={disabled || loading}
-      style={[
-        styles.base,
-        baseStyle,
-        disabled && styles.disabled,
-        style
-      ]}
+      style={[styles.base, btnStyle, disabled && styles.disabled, style]}
       activeOpacity={0.8}
     >
       {loading ? (
         <ActivityIndicator color={loaderColor} />
       ) : (
-        <Text style={[styles.textBase, textStyle, disabled && styles.disabledText]}>
+        <Text style={[styles.textBase, txtStyle, disabled && styles.disabledText]}>
           {label}
         </Text>
       )}
@@ -49,35 +71,21 @@ export function PrimaryButton({ label, onPress, variant = 'primary', disabled, l
 
 const styles = StyleSheet.create({
   base: {
-    height: 50,
-    borderRadius: 12,
+    height: 52, // ارتفاع مريح للأصبع (UX)
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'row',
   },
-  textBase: { fontSize: 16, fontWeight: '600' },
-  
-  // Primary
-  primary: { backgroundColor: '#2563eb' },
-  primaryText: { color: '#ffffff' },
-
-  // Secondary
-  secondary: { backgroundColor: '#eff6ff' },
-  secondaryText: { color: '#1d4ed8' },
-
-  // Outline
-  outline: { backgroundColor: 'transparent', borderWidth: 1, borderColor: '#d1d5db' },
-  outlineText: { color: '#374151' },
-
-  // ✅ Ghost (بدون خلفية أو حدود)
-  ghost: { backgroundColor: 'transparent' },
-  ghostText: { color: '#6b7280' },
-
-  // ✅ Danger (للأزرار الخطرة مثل الحذف أو الإنهاء)
-  danger: { backgroundColor: '#dc2626' }, // Red-600
-  dangerText: { color: '#ffffff' },
-
-  // Disabled
-  disabled: { backgroundColor: '#f3f4f6', borderColor: '#e5e7eb', borderWidth: 1 },
-  disabledText: { color: '#9ca3af' },
+  textBase: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  disabled: {
+    backgroundColor: '#F3F4F6',
+    borderColor: '#E5E7EB',
+  },
+  disabledText: {
+    color: '#9CA3AF',
+  },
 });

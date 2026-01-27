@@ -1,10 +1,18 @@
-// apps/crm-mobile/src/navigation/RootNavigator.tsx
-
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React, { useEffect } from 'react';
 import { ActivityIndicator, View, StyleSheet } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
+import { useAuth } from '../state/AuthContext';
+import { AppStackParamList } from './types';
+
+// Auth Screens
+import { ForgotPasswordScreen } from '../screens/auth/ForgotPasswordScreen';
+import { LoginScreen } from '../screens/auth/LoginScreen';
+import { RegisterScreen } from '../screens/auth/RegisterScreen';
+import { TenantSelectScreen } from '../screens/auth/TenantSelectScreen';
+
+// App Screens
 import { CreateDealScreen } from '../screens/app/CreateDealScreen';
 import { DashboardScreen } from '../screens/app/DashboardScreen';
 import { DealDetailsScreen } from '../screens/app/DealDetailsScreen';
@@ -13,12 +21,6 @@ import { ProfileScreen } from '../screens/app/ProfileScreen';
 import { SelectLeadScreen } from '../screens/app/SelectLeadScreen';
 import { StartVisitProofScreen } from '../screens/app/StartVisitProofScreen';
 import { VisitLiveScreen } from '../screens/app/VisitLiveScreen';
-import { LoginScreen } from '../screens/auth/LoginScreen';
-import { RegisterScreen } from '../screens/auth/RegisterScreen';
-import { TenantSelectScreen } from '../screens/auth/TenantSelectScreen';
-import { useAuth } from '../state/AuthContext';
-
-import type { AppStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<AppStackParamList>();
 
@@ -26,12 +28,11 @@ export function RootNavigator() {
   const { state } = useAuth();
 
   useEffect(() => {
-     // Splash screen logic if needed
+     // Splash logic here if needed
   }, []);
 
   if (state.status === 'booting') {
     return (
-      // ✅ تم استبدال الستايل المباشر بستايل معرف
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#2563eb" />
       </View>
@@ -41,11 +42,11 @@ export function RootNavigator() {
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        
         {state.status === 'signedOut' ? (
           <Stack.Group>
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
+            <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
           </Stack.Group>
         ) : state.status === 'needsTenant' ? (
           <Stack.Screen name="TenantSelect" component={TenantSelectScreen} />

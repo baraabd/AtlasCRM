@@ -1,5 +1,3 @@
-// apps/crm-mobile/src/state/AuthContext.tsx
-
 import React, { createContext, useContext, useEffect, useReducer, useMemo } from 'react';
 
 import { authApi, type LoginInput, type RegisterInput } from '../infra/api/auth';
@@ -13,6 +11,7 @@ import { initDb } from '../infra/db/db';
 import { runMigrations } from '../infra/db/migrations';
 import type { User, Tenant, AuthStatus } from '../types/domain';
 
+// ... (نفس التعريفات السابقة AuthState و AuthAction و authReducer بدون تغيير) ...
 type AuthState = {
   status: AuthStatus;
   token: string | null;
@@ -56,7 +55,20 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
   }
 }
 
-const AuthCtx = createContext<{ state: AuthState; actions: any } | null>(null);
+type AuthContextType = {
+  state: AuthState;
+  actions: {
+    login: (input: LoginInput) => Promise<void>;
+    register: (input: RegisterInput) => Promise<void>;
+    forgotPassword: (email: string) => Promise<void>;
+    loadTenants: () => Promise<void>;
+    selectTenant: (id: string) => Promise<void>;
+    logout: () => Promise<void>;
+    clearError: () => void;
+  };
+};
+
+const AuthCtx = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(authReducer, {
@@ -68,10 +80,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     error: null,
   });
 
-  // 1. Bootstrapping
   useEffect(() => {
     (async () => {
       try {
+        console.log('[Auth] Booting...'); // 🔍 Log
         await initDb();
         await runMigrations();
 
@@ -89,12 +101,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           status = tenantId ? 'signedIn' : 'needsTenant';
         }
 
+        console.log('[Auth] Boot Complete. Status:', status); // 🔍 Log
+
         dispatch({ 
           type: 'BOOT_COMPLETE', 
           payload: { token, tenantId, user, status } 
         });
       } catch (e) {
-        console.error('Boot error:', e);
+        console.error('[Auth] Boot Error:', e); // 🚨 Error Log
         dispatch({ type: 'LOGOUT' });
       }
     })();
@@ -102,11 +116,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const actions = useMemo(() => ({
     login: async (input: LoginInput) => {
+      console.log('[Auth] Login Attempt:', input.email); // 🔍 Log Email
       try {
         dispatch({ type: 'SET_ERROR', error: null });
         
         const res = await authApi.login(input);
         
+        console.log('[Auth] Login Success. Token received.'); // 🔍 Log Success
+
         await saveToken(res.token);
         await clearTenantId();
         if (res.user) await saveUserData(res.user);
@@ -121,17 +138,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
 
       } catch (e: any) {
-        dispatch({ type: 'SET_ERROR', error: e.response?.data?.message || 'Login failed' });
+        // 🚨 تفصيل الخطأ في التيرمينال
+        console.error('------- LOGIN ERROR -------');
+        console.error('Message:', e.message);
+        if (e.response) {
+            console.error('Status:', e.response.status);
+            console.error('Data:', JSON.stringify(e.response.data, null, 2));
+        } else if (e.request) {
+            console.error('No response received (Network Error?)');
+        } else {
+            console.error('Error setting up request:', e.message);
+        }
+        console.error('---------------------------');
+
+        dispatch({ type: 'SET_ERROR', error: e.response?.data?.message || e.message || 'Login failed' });
         throw e;
       }
     },
 
-    // ✅ تم التعديل هنا: استخدام RegisterInput بدلاً من FormData
     register: async (input: RegisterInput) => {
+      console.log('[Auth] Register Attempt:', input.email); // 🔍 Log
       try {
         dispatch({ type: 'SET_ERROR', error: null });
         const res = await authApi.register(input);
         
+        console.log('[Auth] Register Success'); // 🔍 Log
+
         await saveToken(res.token);
         await clearTenantId();
         if (res.user) await saveUserData(res.user);
@@ -139,33 +171,56 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setHttpAuthToken(res.token);
         dispatch({ type: 'LOGIN_SUCCESS', token: res.token, user: res.user });
       } catch(e: any) {
+        // 🚨 تفصيل الخطأ في التيرمينال
+        console.error('------- REGISTER ERROR -------');
+        console.error('Message:', e.message);
+        console.error('Response:', e.response?.data);
+        console.error('------------------------------');
+
         dispatch({ type: 'SET_ERROR', error: e.response?.data?.message || 'Register failed' });
         throw e;
       }
     },
 
-    loadTenants: async () => {
+    forgotPassword: async (email: string) => {
+      console.log('[Auth] Forgot Password Attempt:', email); // 🔍 Log
       try {
-        const fakeTenants: Tenant[] = [
-            { id: 't1', name: 'My Organization', industry: 'General' },
-        ];
-        dispatch({ type: 'SET_TENANTS', tenants: fakeTenants });
-      } catch { // ✅ تجاهل المتغير غير المستخدم
-        dispatch({ type: 'SET_ERROR', error: 'Failed to load organizations' });
+        dispatch({ type: 'SET_ERROR', error: null });
+        
+        // محاكاة
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        console.log('[Auth] Forgot Password Email Sent (Mock)'); // 🔍 Log
+        
+      } catch (e: any) {
+        console.error('[Auth] Forgot Password Error:', e); // 🚨 Error Log
+        dispatch({ type: 'SET_ERROR', error: 'Failed to request password reset' });
+        throw new Error('Reset failed');
       }
+    },
+
+    loadTenants: async () => {
+        // ... (يمكنك إضافة Logs هنا أيضاً بنفس الطريقة)
+        try {
+            const fakeTenants: Tenant[] = [{ id: 't1', name: 'My Organization', industry: 'General' }];
+            dispatch({ type: 'SET_TENANTS', tenants: fakeTenants });
+        } catch (e) {
+            console.error('[Auth] Load Tenants Error:', e);
+        }
     },
 
     selectTenant: async (id: string) => {
-      try {
-        await saveTenantId(id);
-        setHttpTenantId(id);
-        dispatch({ type: 'SELECT_TENANT', tenantId: id });
-      } catch { // ✅ تجاهل المتغير غير المستخدم
-        dispatch({ type: 'SET_ERROR', error: 'Failed to select organization' });
-      }
+        // ...
+        try {
+            await saveTenantId(id);
+            setHttpTenantId(id);
+            dispatch({ type: 'SELECT_TENANT', tenantId: id });
+        } catch (e) {
+            console.error('[Auth] Select Tenant Error:', e);
+        }
     },
 
     logout: async () => {
+      console.log('[Auth] Logging out...');
       await clearAuthData();
       setHttpAuthToken(null);
       setHttpTenantId(null);

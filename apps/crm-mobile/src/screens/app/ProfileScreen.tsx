@@ -1,5 +1,3 @@
-// apps/crm-mobile/src/screens/app/ProfileScreen.tsx
-
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
@@ -47,8 +45,7 @@ export function ProfileScreen({ navigation }: ScreenProps<'Profile'>) {
         onPress={() => navigation.goBack()} 
       />
 
-      {/* ✅ استخدام الستايل المعرف بدلاً من inline */}
-      <View style={styles.buttonSpacer} />
+      <View style={{ height: 12 }} />
 
       <PrimaryButton 
         label="Logout" 
@@ -66,5 +63,4 @@ const styles = StyleSheet.create({
   value: { fontWeight: '600', color: '#111827', fontSize: 14 },
   separator: { height: 1, backgroundColor: '#f3f4f6', marginVertical: 8 },
   spacer: { height: 24 },
-  buttonSpacer: { height: 12 }, // ✅ الستايل الجديد
 });

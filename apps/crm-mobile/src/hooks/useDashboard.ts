@@ -1,7 +1,4 @@
-// apps/crm-mobile/src/hooks/useDashboard.ts
-
-// ✅ 1. أعدنا استيراد useMemo
-import { useCallback, useState, useMemo } from 'react';
+import { useCallback, useState, useMemo } from 'react'; // ✅ إضافة useMemo
 
 export function useDashboard() {
   const [state, setState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -34,8 +31,7 @@ export function useDashboard() {
     console.log('Open follow up', id);
   }, []);
 
-  // ✅ 2. الحل الجذري: استخدام useMemo لتثبيت كائن الـ actions
-  // هذا يمنع useEffect في DashboardScreen من الدخول في حلقة لا نهائية
+  // ✅ استخدام useMemo لمنع إعادة إنشاء هذا الكائن في كل مرة
   const actions = useMemo(() => ({
     loadDashboard,
     refresh,
@@ -47,6 +43,6 @@ export function useDashboard() {
     data,
     error,
     offline: false,
-    actions // ✅ نرجع الكائن المثبت
+    actions // ✅ تمرير الكائن المثبت
   };
 }

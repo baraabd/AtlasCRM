@@ -1,216 +1,217 @@
-// apps/crm-mobile/src/screens/auth/RegisterScreen.tsx
-
-import * as ImagePicker from 'expo-image-picker';
-import React, { useMemo, useState } from 'react';
-import { StyleSheet, Text, TextInput, View, TouchableOpacity, Image, Alert, ScrollView } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import React, { useState, useEffect } from 'react';
+import { 
+  StyleSheet, Text, TextInput, View, TouchableOpacity, 
+  ScrollView, SafeAreaView, KeyboardAvoidingView, Platform 
+} from 'react-native';
 
 import { Banner } from '../../components/feedback/Banner';
-import { Screen } from '../../components/layout/Screen';
-import { StickyFooter } from '../../components/layout/StickyFooter';
-import { Card } from '../../components/ui/Card';
+import { Checkbox } from '../../components/ui/Checkbox';
+import { PrimaryButton } from '../../components/ui/PrimaryButton';
+import { SocialBlock } from '../../components/ui/SocialBlock';
 import { useAuth } from '../../state/AuthContext';
 import type { ScreenProps } from '../_types';
 
-type Step = 'basic' | 'documents';
-
 export function RegisterScreen({ navigation }: ScreenProps<'Register'>) {
   const { state, actions } = useAuth();
-  const [step, setStep] = useState<Step>('basic');
-  const [isLoading, setIsLoading] = useState(false);
-  // إضافة حالة لرسالة خطأ محلية أكثر تفصيلاً
-  const [localError, setLocalError] = useState<string | null>(null);
-
-  // Form State
+  
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [avatar, setAvatar] = useState<ImagePicker.ImagePickerAsset | null>(null);
+  
+  const [activeTab, setActiveTab] = useState<'email' | 'phone'>('email');
+  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [agreeMarketing, setAgreeMarketing] = useState(false);
+  
+  const [isLoading, setIsLoading] = useState(false);
 
-  const isBasicValid = useMemo(() => 
-    fullName.trim().length >= 3 && email.includes('@') && password.length >= 6,
-    [fullName, email, password]
-  );
+  useEffect(() => {
+    actions.clearError();
+  }, [actions]); // ✅ تمت إضافة actions هنا
 
-  const pickImage = async () => {
-    const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!granted) {
-      Alert.alert("Permission Required", "Allow access to photos to upload a profile picture.");
-      return;
-    }
+  const canSubmit = fullName.length > 2 && email.length > 3 && password.length >= 6 && agreeTerms;
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.5,
-    });
-
-    if (!result.canceled && result.assets.length > 0) {
-      setAvatar(result.assets[0]);
-    }
-  };
-
-  const handleRegister = async () => {
+  async function onRegister() {
     if (isLoading) return;
     setIsLoading(true);
-    setLocalError(null);
+    actions.clearError();
 
     try {
-     
-      // ✅ الحل: إرسال كائن عادي (JSON)
-      const payload = {
+      await actions.register({
         fullName: fullName.trim(),
         email: email.trim().toLowerCase(),
         password: password,
-        // (سنؤجل الصورة حالياً لضمان نجاح التسجيل)
-      };
-
-      console.log('🚀 Sending registration request (JSON)...', payload); 
-      
-      // Axios سيقوم بتحويله لـ JSON تلقائياً لأننا ضبطنا الهيدر في http.ts
-      await actions.register(payload);
-      
-    } catch (e: any) {
-      const errorDetails = {
-        message: e.message,
-        code: e.code,
-        status: e.response?.status,
-        data: e.response?.data,
-        baseURL: e.config?.baseURL
-      };
-      
-      console.error('❌ REGISTER FAILED:', JSON.stringify(errorDetails, null, 2));
-
-      let userFriendlyMessage = e.response?.data?.message || e.message;
-      
-      if (e.message.includes('Network Error')) {
-        userFriendlyMessage = `Cannot reach server at ${errorDetails.baseURL}. Check your IP settings.`;
-      } else if (e.response?.status === 500) {
-        userFriendlyMessage = "Server Error: Please check Backend Terminal for logs.";
-      }
-
-      setLocalError(userFriendlyMessage);
-      
+      });
+    } catch {
+       // Error handled in Context
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const footer = (
-    <StickyFooter
-      secondary={{
-        label: 'Back',
-        variant: 'outline',
-        onPress: () => step === 'basic' ? navigation.goBack() : setStep('basic'),
-        disabled: isLoading
-      }}
-      primary={{
-        label: step === 'basic' ? 'Next Step' : (isLoading ? 'Creating...' : 'Create Account'),
-        variant: 'primary',
-        disabled: !isBasicValid || isLoading,
-        onPress: () => step === 'basic' ? setStep('documents') : void handleRegister(),
-      }}
-    />
-  );
+  }
 
   return (
-    <Screen title="Create Account" footer={footer}>
-      {/* عرض الخطأ المحلي أو خطأ الحالة العامة */}
-      {(!!state.error || !!localError) && (
-        <Banner variant="error" text={localError || state.error || 'Unknown error'} />
-      )}
-
-      <ScrollView contentContainerStyle={ styles.scrollContent }>
-        {step === 'basic' ? (
-          <Card>
-            <Text style={styles.sectionTitle}>Basic Information</Text>
-            
-            <View style={styles.field}>
-              <Text style={styles.label}>Full Name</Text>
-              <TextInput 
-                value={fullName} 
-                onChangeText={setFullName} 
-                style={styles.input} 
-                placeholder="John Doe"
-                editable={!isLoading}
-              />
-            </View>
-
-            <View style={styles.field}>
-              <Text style={styles.label}>Email Address</Text>
-              <TextInput
-                value={email}
-                onChangeText={setEmail}
-                autoCapitalize="none"
-                keyboardType="email-address"
-                style={styles.input}
-                placeholder="john@example.com"
-                editable={!isLoading}
-              />
-            </View>
-
-            <View style={styles.field}>
-              <Text style={styles.label}>Password</Text>
-              <TextInput 
-                value={password} 
-                onChangeText={setPassword} 
-                secureTextEntry 
-                style={styles.input} 
-                placeholder="Min. 6 characters"
-                editable={!isLoading}
-              />
-            </View>
-          </Card>
-        ) : (
-          <Card>
-            <Text style={styles.sectionTitle}>Profile Setup</Text>
-            <Text style={styles.subText}>Add a profile photo to help your team identify you (Optional).</Text>
-
-            <TouchableOpacity onPress={pickImage} style={styles.avatarUpload} disabled={isLoading}>
-              {avatar ? (
-                <Image source={{ uri: avatar.uri }} style={styles.avatarImage} />
-              ) : (
-                <View style={styles.avatarPlaceholder}>
-                  <Text style={styles.plusIcon}>+</Text>
-                  <Text style={styles.avatarLabel}>Upload Photo</Text>
-                </View>
-              )}
+    <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined} 
+        style={styles.container}
+      >
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+              <Ionicons name="arrow-back" size={24} color="#111827" />
             </TouchableOpacity>
-          </Card>
-        )}
-      </ScrollView>
-    </Screen>
+          </View>
+
+          {!!state.error && (
+            <View style={styles.errorContainer}>
+              <Banner 
+                variant="error" 
+                text={state.error} 
+                action={{ label: 'Dismiss', onPress: actions.clearError }}
+              />
+            </View>
+          )}
+
+          <Text style={styles.title}>Create a new account</Text>
+
+          <SocialBlock />
+
+          <Text style={styles.orText}>or</Text>
+
+          <View style={styles.form}>
+            <TextInput
+              value={fullName}
+              onChangeText={setFullName}
+              placeholder="Full name"
+              style={styles.input}
+              autoCapitalize="words"
+              autoComplete="name"
+              textContentType="name"
+            />
+
+            <View style={styles.tabsWrapper}>
+              <TouchableOpacity 
+                style={[styles.tab, activeTab === 'email' && styles.activeTab]}
+                onPress={() => setActiveTab('email')}
+              >
+                <Text style={[styles.tabText, activeTab === 'email' && styles.activeTabText]}>Email</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.tab, activeTab === 'phone' && styles.activeTab]}
+                onPress={() => setActiveTab('phone')}
+              >
+                <Text style={[styles.tabText, activeTab === 'phone' && styles.activeTabText]}>Phone number</Text>
+              </TouchableOpacity>
+            </View>
+
+            <TextInput
+              value={email}
+              onChangeText={(t) => { setEmail(t); actions.clearError(); }}
+              placeholder={activeTab === 'email' ? "Email" : "Phone number"}
+              style={styles.input}
+              autoCapitalize="none"
+              keyboardType={activeTab === 'email' ? "email-address" : "phone-pad"}
+              autoComplete={activeTab === 'email' ? "email" : "tel"} 
+              textContentType={activeTab === 'email' ? "emailAddress" : "telephoneNumber"}
+            />
+
+            <View style={styles.passContainer}>
+               <TextInput
+                 value={password}
+                 onChangeText={(t) => { setPassword(t); actions.clearError(); }}
+                 placeholder="Set up password"
+                 secureTextEntry
+                 style={styles.input}
+                 autoComplete="password-new"
+                 textContentType="newPassword"
+               />
+               <Ionicons name="eye-off-outline" size={20} color="#9CA3AF" style={styles.eyeIcon} />
+            </View>
+
+            <View style={styles.spacer} />
+
+            <Checkbox 
+               label="I agree to receive offers, tips and product updates sent by Jibble."
+               checked={agreeMarketing}
+               onChange={setAgreeMarketing}
+            />
+
+            <Checkbox 
+               label="I agree to Company's Terms of Service & Privacy Policy."
+               checked={agreeTerms}
+               onChange={setAgreeTerms}
+               highlightLink={{
+                 text: "Terms of Service & Privacy Policy",
+                 onPress: () => console.log('Open Terms')
+               }}
+            />
+
+            <View style={styles.spacer} />
+
+            <PrimaryButton 
+               label="Next" 
+               onPress={() => void onRegister()}
+               loading={isLoading}
+               disabled={!canSubmit}
+            />
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollContent: { paddingBottom: 20 },
-  sectionTitle: { fontWeight: '900', fontSize: 18, color: '#111827' },
-  subText: { marginTop: 4, color: '#6b7280', fontSize: 14, marginBottom: 20 },
-  field: { marginTop: 16 },
-  label: { marginBottom: 6, color: '#374151', fontWeight: '500' },
+  safeArea: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1 },
+  scrollContent: { padding: 24, paddingBottom: 40 },
+  
+  header: { marginBottom: 20 },
+  backBtn: { alignSelf: 'flex-start', padding: 4 },
+  
+  errorContainer: { marginBottom: 16 },
+
+  title: { fontSize: 24, fontWeight: '700', textAlign: 'center', marginBottom: 24, color: '#111827' },
+  orText: { textAlign: 'center', color: '#9CA3AF', marginBottom: 20, fontSize: 14 },
+
+  form: { gap: 12 },
   input: {
+    backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: '#e5e7eb',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    backgroundColor: '#f9fafb',
+    borderColor: '#E5E7EB',
+    borderRadius: 8,
+    padding: 14,
     fontSize: 16,
+    color: '#1F2937',
   },
-  avatarUpload: { alignSelf: 'center', marginTop: 10 },
-  avatarImage: { width: 120, height: 120, borderRadius: 60 },
-  avatarPlaceholder: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: '#f3f4f6',
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderStyle: 'dashed',
-    justifyContent: 'center',
-    alignItems: 'center',
+  
+  tabsWrapper: { 
+    flexDirection: 'row', 
+    borderWidth: 1, 
+    borderColor: '#E5E7EB', 
+    borderRadius: 8, 
+    overflow: 'hidden',
+    marginBottom: 4 
   },
-  plusIcon: { fontSize: 24, color: '#9ca3af', fontWeight: 'bold' },
-  avatarLabel: { fontSize: 12, color: '#9ca3af', marginTop: 4 },
+  tab: { 
+    flex: 1, 
+    paddingVertical: 12, 
+    alignItems: 'center', 
+    backgroundColor: '#F9FAFB',
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent'
+  },
+  activeTab: { 
+    backgroundColor: '#fff', 
+    borderBottomColor: '#F36E27' 
+  },
+  tabText: { color: '#9CA3AF', fontWeight: '600' },
+  activeTabText: { color: '#F36E27' },
+
+  passContainer: { position: 'relative' },
+  eyeIcon: { position: 'absolute', right: 14, top: 16 },
+  
+  spacer: { height: 12 },
 });

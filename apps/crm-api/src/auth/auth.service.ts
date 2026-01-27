@@ -3,19 +3,33 @@ import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
-import { RegisterDto } from './dto/register.dto'; // ✅ استيراد
+import { RegisterDto } from './dto/register.dto';
 
 @Injectable()
 export class AuthService {
   constructor(private prisma: PrismaService, private jwtService: JwtService) {}
 
   async login(email: string, pass: string) {
-    // ... (كود تسجيل الدخول يبقى كما هو)
-    const user = await this.prisma.user.findUnique({ where: { email } });
-    if (!user) throw new UnauthorizedException('Invalid credentials');
+    console.log('------------------------------------------------');
+    console.log(`🔍 [Auth] Login Request for: "${email}"`);
 
+    // 1. البحث عن المستخدم
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    
+    if (!user) {
+      console.error(`❌ [Auth] Failed: User email not found in DB.`);
+      throw new UnauthorizedException('Invalid credentials');
+    }
+    console.log(`✅ [Auth] User found (ID: ${user.id}). Checking password...`);
+
+    // 2. التحقق من كلمة المرور
     const isMatch = await bcrypt.compare(pass, user.password);
-    if (!isMatch) throw new UnauthorizedException('Invalid credentials');
+    if (!isMatch) {
+      console.error(`❌ [Auth] Failed: Password mismatch.`);
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    console.log(`✅ [Auth] Password correct. Generating token...`);
 
     const payload = { sub: user.id, email: user.email, tenantId: user.tenantId };
     return {
@@ -24,26 +38,25 @@ export class AuthService {
     };
   }
 
-  // ✅ التعديل هنا: تحديد النوع RegisterDto
   async register(data: RegisterDto) {
-    console.log('🔄 Processing Register for:', data.email); // طباعة تتبع
+    console.log('------------------------------------------------');
+    console.log(`📝 [Auth] Register Request for: "${data.email}"`);
 
-    // 1. التحقق من وجود المستخدم
     const existing = await this.prisma.user.findUnique({ where: { email: data.email } });
-    if (existing) throw new BadRequestException('Email already exists');
+    if (existing) {
+      console.error(`❌ [Auth] Failed: Email already exists.`);
+      throw new BadRequestException('Email already exists');
+    }
 
-    // 2. تشفير كلمة المرور
     const salt = await bcrypt.genSalt();
     const hashedPassword = await bcrypt.hash(data.password, salt);
 
-    // 3. إنشاء المعرفات
     const tenantId = uuidv4();
     const userId = uuidv4();
 
-    // 4. الحفظ في قاعدة البيانات
     try {
+      console.log(`⚙️ [Auth] Starting DB Transaction...`);
       return await this.prisma.$transaction(async (tx) => {
-        // أ) إنشاء الشركة
         const tenant = await tx.tenant.create({
           data: {
             id: tenantId,
@@ -51,7 +64,6 @@ export class AuthService {
           }
         });
 
-        // ب) إنشاء المستخدم
         const user = await tx.user.create({
           data: {
             id: userId,
@@ -62,7 +74,8 @@ export class AuthService {
           }
         });
 
-        // ج) تسجيل الدخول
+        console.log(`✅ [Auth] User & Tenant created successfully.`);
+
         const payload = { sub: user.id, email: user.email, tenantId: user.tenantId };
         return {
           token: this.jwtService.sign(payload),
@@ -70,7 +83,7 @@ export class AuthService {
         };
       });
     } catch (error) {
-      console.error('Registration Database Error:', error);
+      console.error('❌ [Auth] Database Error during register:', error);
       throw new BadRequestException('Registration failed due to database error');
     }
   }
