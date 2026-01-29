@@ -8,6 +8,7 @@ export type Lead = {
   name: string;
   businessType?: string | null;
   phones?: string[];        // تم التوحيد على phones ومصفوفة
+  phoneNumber?: string;
   address?: string | null;
   distanceM?: number | null;
   hasOpenDeal?: boolean;
@@ -73,8 +74,10 @@ export type DealDraft = {
   discountValue: number;
   discountType: 'PERCENT' | 'AMOUNT';
 };
-export type ServiceItem = { id: string; name: string; basePrice: number; category: string; };
-export type DiscountPolicy = { agentMaxPct: number; allowOverride: boolean; };
+export type DiscountPolicy = { 
+  agentMaxPct: number; 
+  allowOverride: boolean; 
+};
 
 export interface VisitPresented {
   id: string;
@@ -114,4 +117,29 @@ export type AuthResponse = {
 export type ApiError = {
   message: string;
   code?: string;
+};
+
+// ... الأنواع السابقة (User, AuthResponse)
+
+export type LookupItem = {
+  id: number;
+  category: string;
+  code: string;
+  labelAr: string;
+  labelEn: string;
+  sortOrder: number;
+};
+
+export type ServiceItem = {
+  id: string;
+  nameAr: string;
+  nameEn: string;
+  basePrice: string; 
+  minPrice: string;
+};
+
+export type AppMetadata = {
+  lookups: Record<string, LookupItem[]>; 
+  services: ServiceItem[];
+  timestamp: string;
 };

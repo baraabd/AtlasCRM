@@ -45,7 +45,7 @@ export function ProfileScreen({ navigation }: ScreenProps<'Profile'>) {
         onPress={() => navigation.goBack()} 
       />
 
-      <View style={{ height: 12 }} />
+      <View style={ styles.spacer } />
 
       <PrimaryButton 
         label="Logout" 
@@ -62,5 +62,5 @@ const styles = StyleSheet.create({
   label: { color: '#6b7280', fontSize: 14 },
   value: { fontWeight: '600', color: '#111827', fontSize: 14 },
   separator: { height: 1, backgroundColor: '#f3f4f6', marginVertical: 8 },
-  spacer: { height: 24 },
+  spacer: { height: 12 },
 });

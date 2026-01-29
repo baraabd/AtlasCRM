@@ -1,16 +1,10 @@
-import React, { useEffect } from 'react';
-import { ActivityIndicator, View, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import React, { useEffect } from 'react';
+import { ActivityIndicator, View, StyleSheet } from 'react-native';
 
-import { useAuth } from '../state/AuthContext';
-import { AppStackParamList } from './types';
 
 // Auth Screens
-import { ForgotPasswordScreen } from '../screens/auth/ForgotPasswordScreen';
-import { LoginScreen } from '../screens/auth/LoginScreen';
-import { RegisterScreen } from '../screens/auth/RegisterScreen';
-import { TenantSelectScreen } from '../screens/auth/TenantSelectScreen';
 
 // App Screens
 import { CreateDealScreen } from '../screens/app/CreateDealScreen';
@@ -21,6 +15,13 @@ import { ProfileScreen } from '../screens/app/ProfileScreen';
 import { SelectLeadScreen } from '../screens/app/SelectLeadScreen';
 import { StartVisitProofScreen } from '../screens/app/StartVisitProofScreen';
 import { VisitLiveScreen } from '../screens/app/VisitLiveScreen';
+import { ForgotPasswordScreen } from '../screens/auth/ForgotPasswordScreen';
+import { LoginScreen } from '../screens/auth/LoginScreen';
+import { RegisterScreen } from '../screens/auth/RegisterScreen';
+import { TenantSelectScreen } from '../screens/auth/TenantSelectScreen';
+import { useAuth } from '../state/AuthContext';
+
+import type { AppStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<AppStackParamList>();
 

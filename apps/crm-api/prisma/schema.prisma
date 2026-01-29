@@ -7,80 +7,210 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// 1. إدارة الشركات والمستخدمين
+// ===========================================
+// 1. Core Identity & Multi-tenancy
+// ===========================================
+
 model Tenant {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid())
   name      String
-  users     User[]
-  leads     Lead[]
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  
+  users     User[]
+  clients   Client[]
+  services  ServiceProduct[]
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  name      String?
-  role      String   @default("AGENT") // ADMIN, AGENT
-  tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-// 2. البيانات الأساسية (Leads)
-model Lead {
-  id           String   @id // نستخدم String لنقبل UUID القادم من الموبايل
-  name         String
-  businessType String?
-  phones       String[] @default([])
-  address      String?
+  id           String    @id @default(uuid())
+  email        String    @unique
+  password     String
+  name         String?
+  role         UserRole  @default(REP)
   
   tenantId     String
-  tenant       Tenant   @relation(fields: [tenantId], references: [id])
-
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  deletedAt    DateTime? // Soft Delete للمزامنة
-
+  tenant       Tenant    @relation(fields: [tenantId], references: [id])
+  
+  // Auth Fields
+  resetCode    String?
+  resetCodeExp DateTime?
+  
+  // Relationships
   visits       Visit[]
   deals        Deal[]
+  createdClients Client[] @relation("CreatedClients")
+  
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 }
 
-// 3. الزيارات (Visits)
+// ===========================================
+// 2. Metadata & Lookups
+// ===========================================
+
+model LookupValue {
+  id          Int      @id @default(autoincrement())
+  category    String   
+  code        String   
+  labelAr     String   
+  labelEn     String   
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+
+  @@unique([category, code])
+}
+
+model ServiceProduct {
+  id          String   @id @default(uuid())
+  sku         String?
+  nameAr      String
+  nameEn      String
+  description String?
+  basePrice   Decimal  @db.Decimal(10, 2)
+  minPrice    Decimal  @db.Decimal(10, 2)
+  isActive    Boolean  @default(true)
+  
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  
+  dealItems   DealItem[]
+}
+
+// ===========================================
+// 3. Client Intelligence
+// ===========================================
+
+model Client {
+  id             String   @id @default(uuid())
+  tenantId       String
+  tenant         Tenant   @relation(fields: [tenantId], references: [id])
+  
+  businessName   String   
+  phoneNumber    String   
+  
+  businessType   String?  
+  phones         String[] @default([]) 
+  addressText    String?  
+
+  typeCode       String?   
+  industryCode   String?   
+  
+  lat            Float?    
+  lng            Float?
+  city           String?
+  
+  status         ClientStatus @default(NEW_LEAD)
+  
+  visits         Visit[]
+  deals          Deal[]
+  
+  createdByRepId String?
+  createdByRep   User?    @relation("CreatedClients", fields: [createdByRepId], references: [id])
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  deletedAt      DateTime?
+
+  @@index([phoneNumber]) 
+}
+
+// ===========================================
+// 4. Field Operations
+// ===========================================
+
 model Visit {
-  id          String    @id // UUID من الموبايل
-  leadId      String
-  lead        Lead      @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  id             String   @id @default(uuid())
+  
+  clientId       String
+  client         Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  
+  repId          String
+  rep            User     @relation(fields: [repId], references: [id])
+  
+  checkInTime    DateTime @default(now())
+  checkOutTime   DateTime?
+  durationSec    Int?
+  
+  checkInLat     Float?
+  checkInLng     Float?
+  isVerified     Boolean @default(false)
+  
+  outcome        String?
+  notes          String?
+  presented      Json?
 
-  startedAt   DateTime
-  endedAt     DateTime?
-  durationSec Int?
-  outcome     VisitOutcome?
-  notes       String?
-  presented   Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  deletedAt      DateTime?
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
-
-  deals       Deal[]
+  // ✅ التصحيح هنا: إضافة العلاقة العكسية لجدول الصفقات
+  deals          Deal[]
 }
+
+// ===========================================
+// 5. Commercial
+// ===========================================
 
 model Deal {
-  id        String    @id @default(cuid())
-  leadId    String
-  visitId   String?
+  id             String   @id @default(uuid())
+  
+  clientId       String
+  client         Client   @relation(fields: [clientId], references: [id])
+  
+  repId          String
+  rep            User     @relation(fields: [repId], references: [id])
+  
+  totalAmount    Decimal  @db.Decimal(10, 2)
+  status         DealStatus @default(DRAFT)
+  stage          DealStage  @default(NEW)
+  
+  items          DealItem[]
+  
+  contractPdfUrl String?
+  signatureUrl   String?
+  
+  visitId        String?
+  visit          Visit?   @relation(fields: [visitId], references: [id])
 
-  lead      Lead      @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  visit     Visit?    @relation(fields: [visitId], references: [id], onDelete: SetNull)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
 
-  stage     DealStage @default(NEW)
-  value     Int       @default(0)
+model DealItem {
+  id             String   @id @default(uuid())
+  dealId         String
+  deal           Deal     @relation(fields: [dealId], references: [id])
+  
+  serviceId      String
+  service        ServiceProduct @relation(fields: [serviceId], references: [id])
+  
+  quantity       Int
+  unitPrice      Decimal  @db.Decimal(10, 2)
+  total          Decimal  @db.Decimal(10, 2)
+}
 
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+// ===========================================
+// Enums
+// ===========================================
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  REP
+}
+
+enum ClientStatus {
+  NEW_LEAD
+  PROSPECT
+  CUSTOMER
+  BLACKLIST
+}
+
+enum DealStatus {
+  DRAFT
+  SIGNED
+  PAID
+  CANCELLED
 }
 
 enum DealStage {
@@ -89,11 +219,4 @@ enum DealStage {
   NEGOTIATION
   WON
   LOST
-}
-
-enum VisitOutcome {
-  FOLLOW_UP
-  WON
-  LOST
-  NO_ACTION
 }

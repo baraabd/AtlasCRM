@@ -2,19 +2,29 @@ import { Body, Controller, Post, Query, Request, UseGuards } from '@nestjs/commo
 import { AuthGuard } from '@nestjs/passport';
 import { SyncService } from './sync.service';
 
-// ✅ كتابة المسار كاملاً وواضحاً
+@Controller('sync')
 @UseGuards(AuthGuard('jwt'))
-@Controller('v1/sync')
 export class SyncController {
-  constructor(private sync: SyncService) {}
+  constructor(private readonly sync: SyncService) {}
 
+  // Push: الموبايل يرسل بيانات
   @Post('push')
-  async push(@Request() req: any, @Body() body: { events: any[] }) {
-    return this.sync.applyChanges(req.user.tenantId, body.events);
+  async push(@Request() req: any, @Body() body: any) {
+    // body.events هو ما يرسله WatermelonDB عادة، أو يمكن أن يكون body مباشرة
+    // سنرسل الـ body كاملاً للسيرفس ليعالجه
+    const data = body.events || body; 
+    return this.sync.applyChanges(req.user.tenantId, data);
   }
 
-  @Post('pull')
-  async pull(@Request() req: any, @Query('cursor') cursor?: string) {
-    return this.sync.getChanges(req.user.tenantId, cursor);
+  // Pull: الموبايل يطلب بيانات
+  @Post('pull') // WatermelonDB يستخدم POST للـ Pull أحياناً مع query parameters
+  async pull(@Request() req: any, @Query('last_pulled_at') lastPulledAt: string) {
+    // lastPulledAt هو الـ cursor
+    const changes = await this.sync.getChanges(req.user.tenantId, lastPulledAt);
+    
+    return {
+      changes,
+      timestamp: new Date().toISOString(),
+    };
   }
 }

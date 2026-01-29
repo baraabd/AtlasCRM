@@ -10,7 +10,8 @@ export class LeadsService {
   async list(tenantId: string) {
     console.log(`📂 [Leads] Fetching list for Tenant: ${tenantId}`);
     
-    const results = await this.prisma.lead.findMany({
+    // ✅ تصحيح: استخدام client بدلاً من lead (تم تغيير اسم الجدول)
+    const results = await this.prisma.client.findMany({
       where: { tenantId },
       orderBy: { createdAt: 'desc' },
     });
@@ -23,13 +24,15 @@ export class LeadsService {
     console.log(`➕ [Leads] Creating new lead: "${dto.name}" for Tenant: ${tenantId}`);
 
     try {
-      const newLead = await this.prisma.lead.create({
+      const newLead = await this.prisma.client.create({
         data: {
           id: uuidv4(),
-          name: dto.name.trim(),
+          businessName: dto.name.trim(),
+          typeCode: 'GENERAL',
           businessType: dto.businessType?.trim() || null,
-          phones: dto.phones?.length ? dto.phones : [],
+          phoneNumber: dto.phones && dto.phones.length > 0 ? dto.phones[0] : 'N/A', 
           tenantId: tenantId,
+          // MISSING phoneNumber
         },
       });
       console.log(`✅ [Leads] Created successfully. ID: ${newLead.id}`);

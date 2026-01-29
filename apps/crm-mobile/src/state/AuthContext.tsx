@@ -2,16 +2,11 @@ import React, { createContext, useContext, useEffect, useReducer, useMemo } from
 
 import { authApi, type LoginInput, type RegisterInput } from '../infra/api/auth';
 import { setHttpAuthToken, setHttpTenantId } from '../infra/api/http';
-import {
-  getToken, saveToken, clearAuthData,
-  getTenantId, saveTenantId, clearTenantId,
-  getUserData, saveUserData
-} from '../infra/auth/storage';
+import { getToken, saveToken, clearAuthData, getTenantId, saveTenantId, getUserData, saveUserData, clearTenantId } from '../infra/auth/storage';
 import { initDb } from '../infra/db/db';
 import { runMigrations } from '../infra/db/migrations';
 import type { User, Tenant, AuthStatus } from '../types/domain';
 
-// ... (نفس التعريفات السابقة AuthState و AuthAction و authReducer بدون تغيير) ...
 type AuthState = {
   status: AuthStatus;
   token: string | null;
@@ -31,36 +26,24 @@ type AuthAction =
 
 function authReducer(state: AuthState, action: AuthAction): AuthState {
   switch (action.type) {
-    case 'BOOT_COMPLETE':
-      return { ...state, ...action.payload, error: null };
-    case 'LOGIN_SUCCESS':
-      return { 
-        ...state, 
-        token: action.token, 
-        user: action.user || state.user,
-        status: 'needsTenant', 
-        tenantId: null, 
-        error: null 
-      };
-    case 'SET_TENANTS':
-      return { ...state, tenants: action.tenants };
-    case 'SELECT_TENANT':
-      return { ...state, tenantId: action.tenantId, status: 'signedIn' };
-    case 'SET_ERROR':
-      return { ...state, error: action.error };
-    case 'LOGOUT':
-      return { status: 'signedOut', token: null, tenantId: null, user: null, tenants: [], error: null };
-    default:
-      return state;
+    case 'BOOT_COMPLETE': return { ...state, ...action.payload, error: null };
+    case 'LOGIN_SUCCESS': return { ...state, token: action.token, user: action.user || state.user, status: 'needsTenant', tenantId: null, error: null };
+    case 'SET_TENANTS': return { ...state, tenants: action.tenants };
+    case 'SELECT_TENANT': return { ...state, tenantId: action.tenantId, status: 'signedIn' };
+    case 'SET_ERROR': return { ...state, error: action.error };
+    case 'LOGOUT': return { status: 'signedOut', token: null, tenantId: null, user: null, tenants: [], error: null };
+    default: return state;
   }
 }
 
+// ✅ تحديث النوع ليشمل الدوال الجديدة بشكل صريح
 type AuthContextType = {
   state: AuthState;
   actions: {
     login: (input: LoginInput) => Promise<void>;
     register: (input: RegisterInput) => Promise<void>;
     forgotPassword: (email: string) => Promise<void>;
+    resetPassword: (email: string, otp: string, newPass: string) => Promise<void>;
     loadTenants: () => Promise<void>;
     selectTenant: (id: string) => Promise<void>;
     logout: () => Promise<void>;
@@ -83,32 +66,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     (async () => {
       try {
-        console.log('[Auth] Booting...'); // 🔍 Log
+        console.log('[Auth] Booting...');
         await initDb();
         await runMigrations();
-
-        const [token, tenantId, user] = await Promise.all([
-          getToken(),
-          getTenantId(),
-          getUserData()
-        ]);
-
+        const [token, tenantId, user] = await Promise.all([getToken(), getTenantId(), getUserData()]);
+        
         if (token) setHttpAuthToken(token);
         if (tenantId) setHttpTenantId(tenantId);
 
         let status: AuthStatus = 'signedOut';
-        if (token) {
-          status = tenantId ? 'signedIn' : 'needsTenant';
-        }
+        if (token) status = tenantId ? 'signedIn' : 'needsTenant';
 
-        console.log('[Auth] Boot Complete. Status:', status); // 🔍 Log
-
-        dispatch({ 
-          type: 'BOOT_COMPLETE', 
-          payload: { token, tenantId, user, status } 
-        });
-      } catch (e) {
-        console.error('[Auth] Boot Error:', e); // 🚨 Error Log
+        dispatch({ type: 'BOOT_COMPLETE', payload: { token, tenantId, user, status } });
+      } catch {
         dispatch({ type: 'LOGOUT' });
       }
     })();
@@ -116,111 +86,72 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const actions = useMemo(() => ({
     login: async (input: LoginInput) => {
-      console.log('[Auth] Login Attempt:', input.email); // 🔍 Log Email
       try {
         dispatch({ type: 'SET_ERROR', error: null });
-        
         const res = await authApi.login(input);
-        
-        console.log('[Auth] Login Success. Token received.'); // 🔍 Log Success
-
         await saveToken(res.token);
         await clearTenantId();
         if (res.user) await saveUserData(res.user);
-
         setHttpAuthToken(res.token);
         setHttpTenantId(null);
-
-        dispatch({ 
-          type: 'LOGIN_SUCCESS', 
-          token: res.token, 
-          user: res.user 
-        });
-
+        dispatch({ type: 'LOGIN_SUCCESS', token: res.token, user: res.user });
       } catch (e: any) {
-        // 🚨 تفصيل الخطأ في التيرمينال
-        console.error('------- LOGIN ERROR -------');
-        console.error('Message:', e.message);
-        if (e.response) {
-            console.error('Status:', e.response.status);
-            console.error('Data:', JSON.stringify(e.response.data, null, 2));
-        } else if (e.request) {
-            console.error('No response received (Network Error?)');
-        } else {
-            console.error('Error setting up request:', e.message);
-        }
-        console.error('---------------------------');
-
-        dispatch({ type: 'SET_ERROR', error: e.response?.data?.message || e.message || 'Login failed' });
+        dispatch({ type: 'SET_ERROR', error: e.response?.data?.message || 'Login failed' });
         throw e;
       }
     },
 
     register: async (input: RegisterInput) => {
-      console.log('[Auth] Register Attempt:', input.email); // 🔍 Log
       try {
         dispatch({ type: 'SET_ERROR', error: null });
         const res = await authApi.register(input);
-        
-        console.log('[Auth] Register Success'); // 🔍 Log
-
         await saveToken(res.token);
         await clearTenantId();
         if (res.user) await saveUserData(res.user);
-
         setHttpAuthToken(res.token);
         dispatch({ type: 'LOGIN_SUCCESS', token: res.token, user: res.user });
-      } catch(e: any) {
-        // 🚨 تفصيل الخطأ في التيرمينال
-        console.error('------- REGISTER ERROR -------');
-        console.error('Message:', e.message);
-        console.error('Response:', e.response?.data);
-        console.error('------------------------------');
-
+      } catch (e: any) {
         dispatch({ type: 'SET_ERROR', error: e.response?.data?.message || 'Register failed' });
         throw e;
       }
     },
 
     forgotPassword: async (email: string) => {
-      console.log('[Auth] Forgot Password Attempt:', email); // 🔍 Log
       try {
         dispatch({ type: 'SET_ERROR', error: null });
-        
-        // محاكاة
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        console.log('[Auth] Forgot Password Email Sent (Mock)'); // 🔍 Log
-        
+        await authApi.forgotPassword(email);
       } catch (e: any) {
-        console.error('[Auth] Forgot Password Error:', e); // 🚨 Error Log
-        dispatch({ type: 'SET_ERROR', error: 'Failed to request password reset' });
-        throw new Error('Reset failed');
+        dispatch({ type: 'SET_ERROR', error: e.response?.data?.message || 'Failed to send OTP' });
+        throw e;
+      }
+    },
+
+    resetPassword: async (email: string, otp: string, newPass: string) => {
+      try {
+        dispatch({ type: 'SET_ERROR', error: null });
+        await authApi.resetPassword(email, otp, newPass);
+      } catch (e: any) {
+        dispatch({ type: 'SET_ERROR', error: e.response?.data?.message || 'Failed to reset password' });
+        throw e;
       }
     },
 
     loadTenants: async () => {
-        // ... (يمكنك إضافة Logs هنا أيضاً بنفس الطريقة)
         try {
             const fakeTenants: Tenant[] = [{ id: 't1', name: 'My Organization', industry: 'General' }];
             dispatch({ type: 'SET_TENANTS', tenants: fakeTenants });
-        } catch (e) {
-            console.error('[Auth] Load Tenants Error:', e);
-        }
+        } catch { /* ignore */ }
     },
 
     selectTenant: async (id: string) => {
-        // ...
         try {
             await saveTenantId(id);
             setHttpTenantId(id);
             dispatch({ type: 'SELECT_TENANT', tenantId: id });
-        } catch (e) {
-            console.error('[Auth] Select Tenant Error:', e);
-        }
+        } catch { /* ignore */ }
     },
 
     logout: async () => {
-      console.log('[Auth] Logging out...');
       await clearAuthData();
       setHttpAuthToken(null);
       setHttpTenantId(null);
