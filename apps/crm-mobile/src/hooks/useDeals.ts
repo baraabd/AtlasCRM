@@ -38,12 +38,41 @@ export type UseDealsResult = {
   };
 };
 
-const mockCatalog: ServiceItem[] = [
-  { id: 'svc_gbp', name: 'Google Business Profile Setup', basePrice: 900, category: 'GBP' },
-  { id: 'svc_reviews', name: 'Reviews QR + Direct Link', basePrice: 250, category: 'GBP' },
-  { id: 'svc_social', name: 'Social Media Setup', basePrice: 500, category: 'Social' },
-  { id: 'svc_ads', name: 'Local Ads Campaign', basePrice: 1500, category: 'Ads' },
+// ... imports
+
+// ✅ بيانات متوافقة مع النوع ServiceItem
+const MOCK_SERVICES = [
+  { 
+    id: 'svc_gbp', 
+    nameEn: 'Google Business Profile Setup', 
+    nameAr: 'إعداد ملف نشاطي التجاري',
+    basePrice: '900', 
+    minPrice: '500' 
+  },
+  { 
+    id: 'svc_reviews', 
+    nameEn: 'Reviews QR + Direct Link', 
+    nameAr: 'رابط تقييمات مباشر + QR',
+    basePrice: '250', 
+    minPrice: '100' 
+  },
+  { 
+    id: 'svc_social', 
+    nameEn: 'Social Media Setup', 
+    nameAr: 'إعداد حسابات تواصل اجتماعي',
+    basePrice: '500', 
+    minPrice: '300' 
+  },
+  { 
+    id: 'svc_ads', 
+    nameEn: 'Local Ads Campaign', 
+    nameAr: 'حملة إعلانية محلية',
+    basePrice: '1500', 
+    minPrice: '1000' 
+  },
 ];
+
+// ... rest of the file
 
 export function useDeals(params: { leadId?: string; visitId?: string } = {}): UseDealsResult {
   const [catalogState, setCatalogState] = useState<LoadState>('idle');
@@ -83,8 +112,8 @@ export function useDeals(params: { leadId?: string; visitId?: string } = {}): Us
     try {
       setCatalogState('loading');
       setError(null);
-      setCatalog(mockCatalog);
-      setCatalogState(mockCatalog.length ? 'ready' : 'empty');
+      setCatalog(MOCK_SERVICES);
+      setCatalogState(MOCK_SERVICES.length ? 'ready' : 'empty');
     } catch (e: any) {
       setError({ message: e?.message ?? 'Failed to load catalog', recoverable: true });
       setCatalogState('error');

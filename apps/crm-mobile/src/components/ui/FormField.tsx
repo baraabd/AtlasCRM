@@ -1,9 +1,11 @@
+import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import { 
-  StyleSheet, Text, TextInput, View, TextInputProps, 
+import type { TextInputProps, 
   StyleProp, ViewStyle, TextStyle 
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { 
+  StyleSheet, Text, TextInput, View 
+} from 'react-native';
 
 // =================================================================
 // 1. Atoms (Internal)

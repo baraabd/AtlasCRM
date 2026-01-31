@@ -1,5 +1,6 @@
-import { http } from './http';
 import type { AppMetadata } from '../../types/domain';
+
+import { http } from './http';
 
 export const metadataApi = {
   fetchMetadata: async (): Promise<AppMetadata> => {

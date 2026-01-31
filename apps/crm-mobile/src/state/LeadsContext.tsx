@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+
 import { listLeads, upsertLeadLocal } from '../infra/repos/leads.repo';
 import { runSyncWithRetry } from '../infra/sync/sync.service';
 import type { Lead } from '../types/domain';

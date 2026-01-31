@@ -1,5 +1,6 @@
 import React from 'react';
-import { Text, StyleSheet, TextStyle } from 'react-native';
+import type { TextStyle } from 'react-native';
+import { Text, StyleSheet } from 'react-native';
 
 interface Props {
   text: string;

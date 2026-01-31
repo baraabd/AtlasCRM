@@ -1,5 +1,5 @@
-import React from 'react';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import React from 'react';
 import { StyleSheet } from 'react-native';
 
 interface Props {

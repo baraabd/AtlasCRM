@@ -6,8 +6,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { AuthProvider } from './src/state/AuthContext';
 // ✅ استيراد MetadataProvider الجديد
-import { MetadataProvider } from './src/state/MetadataContext';
 import { LeadsProvider } from './src/state/LeadsContext';
+import { MetadataProvider } from './src/state/MetadataContext';
 
 // Mock Sync Runner (Placeholder)
 function SyncRunner() {

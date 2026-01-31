@@ -2,8 +2,9 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { 
   View, Text, TouchableOpacity, Modal, 
-  FlatList, StyleSheet, SafeAreaView, TouchableWithoutFeedback 
+  FlatList, StyleSheet, TouchableWithoutFeedback 
 } from 'react-native';
+
 import type { LookupItem } from '../../types/domain';
 
 type Props = {

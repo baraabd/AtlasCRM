@@ -1,7 +1,9 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+
 import { metadataApi } from '../infra/api/metadata';
 import type { AppMetadata, LookupItem, ServiceItem } from '../types/domain';
+
 import { useAuth } from './AuthContext';
 
 const KEY_METADATA = 'app_metadata_cache';

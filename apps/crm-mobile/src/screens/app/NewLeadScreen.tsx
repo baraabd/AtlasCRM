@@ -1,13 +1,12 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { StyleSheet, View, KeyboardAvoidingView, Platform, Text, Keyboard } from 'react-native';
+import { StyleSheet, View, KeyboardAvoidingView, Platform, Text } from 'react-native';
 
-import { FormField } from '../../components/ui/FormField';
-import { SelectInput } from '../../components/ui/SelectInput';
 // ✅ استيراد المكون الجديد الموحد
 import { ExistingClientAlert } from '../../components/feedback/ExistingClientAlert';
 import { Screen } from '../../components/layout/Screen';
 import { StickyFooter } from '../../components/layout/StickyFooter';
-
+import { FormField } from '../../components/ui/FormField';
+import { SelectInput } from '../../components/ui/SelectInput';
 import { useLeadsCtx } from '../../state/LeadsContext';
 import { useMetadata } from '../../state/MetadataContext';
 import type { Lead } from '../../types/domain';
@@ -141,7 +140,6 @@ export function NewLeadScreen({ navigation, route }: ScreenProps<'NewLead'>) {
             <ExistingClientAlert
               type="danger"
               clientName={exactMatch.name}
-              clientId={exactMatch.id}
               onOpen={() => navigation.replace('SelectLead', { selectLeadId: exactMatch.id })}
             />
           )}
@@ -163,7 +161,7 @@ export function NewLeadScreen({ navigation, route }: ScreenProps<'NewLead'>) {
             onChangeText={setPhone}
             icon="call-outline"
             keyboardType="phone-pad"
-            style={phoneDuplicates.length > 0 ? { borderColor: '#F59E0B', backgroundColor: '#FFFBEB' } : undefined}
+            style={phoneDuplicates.length > 0 ? styles.warningInput : undefined}
           />
 
           {/* 🟡 البطاقة الصفراء (تظهر عند تكرار الهاتف لاسم مختلف) */}
@@ -171,7 +169,6 @@ export function NewLeadScreen({ navigation, route }: ScreenProps<'NewLead'>) {
             <ExistingClientAlert
               type="warning"
               clientName={phoneDuplicates[0].name}
-              clientId={phoneDuplicates[0].id}
               count={phoneDuplicates.length}
               onOpen={() => navigation.replace('SelectLead', { selectLeadId: phoneDuplicates[0].id })}
             />
@@ -189,4 +186,8 @@ const styles = StyleSheet.create({
   section: { marginBottom: 24 },
   sectionTitle: { fontSize: 18, fontWeight: '700', color: '#111827', marginBottom: 4 },
   sectionSubtitle: { fontSize: 14, color: '#6B7280', marginBottom: 24 },
+  warningInput: {
+    borderColor: '#F59E0B',
+    backgroundColor: '#FFFBEB',
+  },
 });
