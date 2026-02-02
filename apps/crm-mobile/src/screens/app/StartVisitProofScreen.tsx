@@ -7,7 +7,7 @@ import { Screen } from '../../components/layout/Screen';
 import { StickyFooter } from '../../components/layout/StickyFooter';
 import { Card } from '../../components/ui/Card';
 import { useVisitFlow } from '../../hooks/useVisitFlow';
-import type { ScreenProps } from '../../screens/_types';
+import type { ScreenProps } from '../../navigation/types';
 
 export function StartVisitProofScreen({ navigation, route }: ScreenProps<'StartVisitProof'>) {
   const { actions } = useVisitFlow();

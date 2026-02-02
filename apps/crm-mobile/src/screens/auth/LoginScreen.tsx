@@ -1,17 +1,16 @@
-// ... Imports كما هي
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
-  StyleSheet, Text, TextInput, View, TouchableOpacity, 
-  ScrollView, SafeAreaView, KeyboardAvoidingView, Platform 
+  KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, 
+  StyleSheet, Text, TextInput, TouchableOpacity, View 
 } from 'react-native';
 
 import { Banner } from '../../components/feedback/Banner';
 import { Checkbox } from '../../components/ui/Checkbox';
 import { PrimaryButton } from '../../components/ui/PrimaryButton';
 import { SocialBlock } from '../../components/ui/SocialBlock';
+import type { ScreenProps } from '../../navigation/types';
 import { useAuth } from '../../state/AuthContext';
-import type { ScreenProps } from '../_types';
 
 export function LoginScreen({ navigation }: ScreenProps<'Login'>) {
   const { state, actions } = useAuth();
@@ -29,7 +28,7 @@ export function LoginScreen({ navigation }: ScreenProps<'Login'>) {
   const canSubmit = email.includes('@') && password.length >= 1;
 
   async function onLogin() {
-    console.log('🔘 [UI] Login button pressed'); // 🔍 Log
+    console.log('🔘 [UI] Login button pressed');
     
     if (!canSubmit) {
         console.warn('⚠️ [UI] Validation failed (Email/Pass empty)');
@@ -42,36 +41,29 @@ export function LoginScreen({ navigation }: ScreenProps<'Login'>) {
     actions.clearError(); 
     
     try {
-      console.log('📡 [UI] Calling actions.login...'); // 🔍 Log
+      console.log('📡 [UI] Calling actions.login...');
       await actions.login({ email: email.trim().toLowerCase(), password });
-      console.log('✅ [UI] Login action completed successfully'); // 🔍 Log
+      console.log('✅ [UI] Login action completed successfully');
     } catch (e: any) {
-      // هنا سنلتقط الخطأ الذي تم رميه من AuthContext
       console.error('❌ [UI] Login Error Caught in Component:', e.message); 
     } finally {
       setIsLoading(false);
     }
   }
 
-  // ... (باقي كود الواجهة كما هو تماماً - الـ UI لم يتغير، فقط الـ Logs) ...
   return (
       <SafeAreaView style={styles.safeArea}>
-        {/* ... نفس هيكل الواجهة السابق ... */}
-        {/* سأختصر الكود هنا، فقط انسخ الـ JSX السابق كما هو */}
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.container}>
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 
-                {/* Header */}
                 <View style={styles.header}>
                     <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
                     <Ionicons name="arrow-back" size={24} color="#111827" />
                     </TouchableOpacity>
                 </View>
 
-                {/* Error Banner */}
                 {!!state.error && (
                     <View style={styles.errorContainer}>
-                    {/* هنا سيظهر الخطأ للمستخدم، وفي التيرمينال ستظهر التفاصيل */}
                     <Banner 
                         variant="error" 
                         text={state.error} 

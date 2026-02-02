@@ -1,23 +1,34 @@
-// apps/crm-mobile/src/infra/repos/leads.repo.ts
+import { v4 as uuid } from "uuid";
 
-import { v4 as uuid } from 'uuid';
+import { exec, queryAll, withTx } from "../db/db";
 
-import { exec, queryAll, withTx } from '../db/db';
+import { addSyncEvent } from "./syncQueue.repo";
 
-import { addSyncEvent } from './syncQueue.repo';
+export type LeadLocation = {
+  longitude: number;
+  latitude: number;
+};
+
+export type UpsertLeadLocalInput = {
+  id?: string;
+  name: string;
+  businessType?: string | null;
+  phones?: string[];
+  location?: LeadLocation;
+};
 
 export async function listLeads() {
-  console.log('[REPO] 🔍 Bringing customers from SQLite...');
+  console.log("[REPO] 🔍 Bringing customers from SQLite...");
   const rows = await queryAll<any>(`SELECT * FROM leads ORDER BY updatedAt DESC`);
   console.log(`[REPO] 📊 Locally discovered customers ${rows.length}`);
   return rows.map(r => ({
     ...r,
     phones: r.phones ? JSON.parse(r.phones) : [],
-    consentMarketing: !!r.consentMarketing
+    consentMarketing: !!r.consentMarketing,
   }));
 }
 
-export async function upsertLeadLocal(input: any) {
+export async function upsertLeadLocal(input: UpsertLeadLocalInput) {
   const id = input.id ?? uuid();
   const now = new Date().toISOString();
   console.log(`[REPO] 💾 Attempting to save customer data: ${input.name} ID: ${id}`);
@@ -32,16 +43,17 @@ export async function upsertLeadLocal(input: any) {
       );
 
       await addSyncEvent({
-        entityType: 'lead',
+        entityType: "lead",
         entityLocalId: id,
-        action: 'upsert',
-        payload: { ...input, id, updatedAt: now }
+        action: "upsert",
+        payload: { ...input, id, updatedAt: now },
       });
     });
-    console.log('[REPO] ✅ Successfully saved in SQLite and synchronization event added.');
+
+    console.log("[REPO] ✅ Successfully saved in SQLite and synchronization event added.");
     return id;
   } catch (error) {
-    console.error('[REPO] ❌ Local save failed:', error);
+    console.error("[REPO] ❌ Local save failed:", error);
     throw error;
   }
 }

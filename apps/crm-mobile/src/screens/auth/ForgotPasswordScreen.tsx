@@ -1,14 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
-  StyleSheet, Text, TextInput, View, TouchableOpacity, 
-  SafeAreaView, KeyboardAvoidingView, Platform 
+  KeyboardAvoidingView, Platform, SafeAreaView, 
+  StyleSheet, Text, TextInput, TouchableOpacity, View 
 } from 'react-native';
 
 import { Banner } from '../../components/feedback/Banner';
 import { PrimaryButton } from '../../components/ui/PrimaryButton';
+import type { ScreenProps } from '../../navigation/types';
 import { useAuth } from '../../state/AuthContext';
-import type { ScreenProps } from '../_types';
 
 export function ForgotPasswordScreen({ navigation }: ScreenProps<'ForgotPassword'>) {
   const { state, actions } = useAuth();

@@ -8,7 +8,7 @@ import { Screen } from '../../components/layout/Screen';
 import { StickyFooter } from '../../components/layout/StickyFooter';
 import { Card } from '../../components/ui/Card';
 import { useDeals } from '../../hooks/useDeals';
-import type { ScreenProps } from '../../screens/_types';
+import type { ScreenProps } from '../../navigation/types';
 
 export function CreateDealScreen({ navigation, route }: ScreenProps<'CreateDeal'>) {
   const { create, actions } = useDeals({ leadId: route.params.leadId, visitId: route.params.visitId });

@@ -1,5 +1,3 @@
-// apps/crm-mobile/src/screens/app/DashboardScreen.tsx
-
 import React, { useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -11,8 +9,8 @@ import { Screen } from '../../components/layout/Screen';
 import { Card } from '../../components/ui/Card';
 import { PrimaryButton } from '../../components/ui/PrimaryButton';
 import { useDashboard } from '../../hooks/useDashboard'; 
+import type { ScreenProps } from '../../navigation/types';
 import { useAuth } from '../../state/AuthContext';
-import type { ScreenProps } from '../_types';
 
 function formatWorkTime(sec: number = 0) {
   const h = Math.floor(sec / 3600);
@@ -23,11 +21,9 @@ function formatWorkTime(sec: number = 0) {
 export function DashboardScreen({ navigation }: ScreenProps<'Dashboard'>) {
   const { state: authState } = useAuth();
   
-  // ✅ The error will be resolved once useDashboard returns loadDashboard
   const { state: loadState, data, error, offline, actions } = useDashboard();
 
   useEffect(() => {
-    // ✅ Now this should work
     void actions.loadDashboard();
   }, [actions]);
 
@@ -41,7 +37,6 @@ export function DashboardScreen({ navigation }: ScreenProps<'Dashboard'>) {
     </View>
   );
 
-  // 1. Loading State
   if (loadState === 'loading' && !data) {
     return (
       <Screen title="Dashboard">
@@ -50,7 +45,6 @@ export function DashboardScreen({ navigation }: ScreenProps<'Dashboard'>) {
     );
   }
 
-  // 2. Error State
   if (loadState === 'error' && !data) {
     const errorMessage = (error as any)?.message ?? 'Failed to load dashboard';
 
@@ -153,7 +147,6 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: 12, color: '#6b7280' },
   subHeader: { fontSize: 16, fontWeight: '700', color: '#111827', marginBottom: 12 },
   profileSection: { marginTop: 24, marginBottom: 40 },
-  // ✅ Defined spacer styles to fix lint warnings
   spacerSmall: { height: 16 },
   spacerLarge: { height: 24 },
 });

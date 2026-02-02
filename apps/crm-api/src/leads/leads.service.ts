@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
+
 import { PrismaService } from '../prisma/prisma.service';
+
 import { CreateLeadDto } from './dto/create-lead.dto';
 
 @Injectable()
@@ -10,7 +12,6 @@ export class LeadsService {
   async list(tenantId: string) {
     console.log(`📂 [Leads] Fetching list for Tenant: ${tenantId}`);
     
-    // ✅ تصحيح: استخدام client بدلاً من lead (تم تغيير اسم الجدول)
     const results = await this.prisma.client.findMany({
       where: { tenantId },
       orderBy: { createdAt: 'desc' },
@@ -32,7 +33,6 @@ export class LeadsService {
           businessType: dto.businessType?.trim() || null,
           phoneNumber: dto.phones && dto.phones.length > 0 ? dto.phones[0] : 'N/A', 
           tenantId: tenantId,
-          // MISSING phoneNumber
         },
       });
       console.log(`✅ [Leads] Created successfully. ID: ${newLead.id}`);

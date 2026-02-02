@@ -1,46 +1,40 @@
-import 'react-native-get-random-values';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
+import { StyleSheet } from 'react-native';
+import 'react-native-gesture-handler';
+import 'react-native-get-random-values';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { AuthProvider } from './src/state/AuthContext';
-// ✅ استيراد MetadataProvider الجديد
 import { LeadsProvider } from './src/state/LeadsContext';
 import { MetadataProvider } from './src/state/MetadataContext';
 
-// Mock Sync Runner (Placeholder)
 function SyncRunner() {
-  return null; // سيتم تطويره لاحقاً في Sprint 5 (Offline Sync)
+  return null;
 }
 
 export default function App() {
   return (
     <SafeAreaProvider>
-      <StatusBar style="dark" />
-      
-      {/* 1. نظام المصادقة أولاً */}
-      <AuthProvider>
-        
-        {/* 2. نظام البيانات الوصفية (القوائم والخدمات) */}
-        {/* نضعه هنا ليتمكن من استخدام التوكن من AuthProvider */}
-        <MetadataProvider>
-
-          {/* 3. بيانات العملاء والعمليات */}
-          <LeadsProvider>
-            
-            {/* الخدمات الخلفية */}
-            <SyncRunner />
-            
-            {/* التنقل والشاشات */}
-            <RootNavigator />
-            
-          </LeadsProvider>
-          
-        </MetadataProvider>
-
-      </AuthProvider>
-      
+      <GestureHandlerRootView style={styles.container}>
+        <AuthProvider>
+          <MetadataProvider>
+            <LeadsProvider>
+              <SyncRunner />
+              <RootNavigator />
+              <StatusBar style="auto" />
+            </LeadsProvider>
+          </MetadataProvider>
+        </AuthProvider>
+      </GestureHandlerRootView>
     </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+});

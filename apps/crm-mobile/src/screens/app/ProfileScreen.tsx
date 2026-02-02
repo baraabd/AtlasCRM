@@ -1,11 +1,11 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { Screen } from '../../components/layout/Screen';
 import { Card } from '../../components/ui/Card';
 import { PrimaryButton } from '../../components/ui/PrimaryButton';
+import type { ScreenProps } from '../../navigation/types';
 import { useAuth } from '../../state/AuthContext';
-import type { ScreenProps } from '../_types'; 
 
 export function ProfileScreen({ navigation }: ScreenProps<'Profile'>) {
   const { state, actions } = useAuth();

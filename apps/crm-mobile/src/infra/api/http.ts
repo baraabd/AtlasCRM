@@ -2,7 +2,7 @@
 
 import axios from 'axios';
 
-const MY_PC_IP = '192.168.68.52'; 
+const MY_PC_IP = '192.168.68.57'; 
 
 const getBaseUrl = () => {
   if (process.env.EXPO_PUBLIC_API_BASE_URL) return process.env.EXPO_PUBLIC_API_BASE_URL;

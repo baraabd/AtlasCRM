@@ -1,23 +1,32 @@
-import { Injectable, UnauthorizedException, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import * as nodemailer from 'nodemailer';
 import { v4 as uuidv4 } from 'uuid';
+
+import { PrismaService } from '../prisma/prisma.service';
+
 import { RegisterDto } from './dto/register.dto';
 
 @Injectable()
 export class AuthService {
-  // إعداد البريد (Mock Mode إذا فشل الإرسال)
   private transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-      user: 'YOUR_EMAIL@gmail.com', // ضع ايميلك هنا
-      pass: 'YOUR_APP_PASSWORD',    // ضع كلمة مرور التطبيق
+      user: 'YOUR_EMAIL@gmail.com',
+      pass: 'YOUR_APP_PASSWORD',
     },
   });
 
-  constructor(private prisma: PrismaService, private jwtService: JwtService) {}
+  constructor(
+    private prisma: PrismaService,
+    private jwtService: JwtService,
+  ) {}
 
   async login(email: string, pass: string) {
     console.log(`🔍 [Auth] Login Request: ${email}`);
@@ -32,7 +41,9 @@ export class AuthService {
 
   async register(data: RegisterDto) {
     console.log(`📝 [Auth] Register Request: ${data.email}`);
-    const existing = await this.prisma.user.findUnique({ where: { email: data.email } });
+    const existing = await this.prisma.user.findUnique({
+      where: { email: data.email },
+    });
     if (existing) throw new BadRequestException('Email already exists');
 
     const salt = await bcrypt.genSalt();
@@ -43,15 +54,21 @@ export class AuthService {
     try {
       return await this.prisma.$transaction(async (tx) => {
         const tenant = await tx.tenant.create({
-          data: { id: tenantId, name: `${data.fullName}'s Organization` }
+          data: { id: tenantId, name: `${data.fullName}'s Organization` },
         });
         const user = await tx.user.create({
-          data: { id: userId, email: data.email, password: hashedPassword, name: data.fullName, tenantId: tenant.id }
+          data: {
+            id: userId,
+            email: data.email,
+            password: hashedPassword,
+            name: data.fullName,
+            tenantId: tenant.id,
+          },
         });
         return this.generateToken(user);
       });
-    } catch (error) {
-      console.error('DB Error:', error);
+    } catch {
+      console.error('DB Error: Registration failed');
       throw new BadRequestException('Registration failed');
     }
   }
@@ -65,7 +82,6 @@ export class AuthService {
     const expiresAt = new Date();
     expiresAt.setMinutes(expiresAt.getMinutes() + 15);
 
-    // ✅ لن يظهر خطأ هنا إذا نفذت npx prisma generate
     await this.prisma.user.update({
       where: { id: user.id },
       data: { resetCode: otp, resetCodeExp: expiresAt },
@@ -81,7 +97,7 @@ export class AuthService {
         text: `Your verification code is: ${otp}`,
       });
       console.log(`✅ [Auth] Email sent successfully.`);
-    } catch (error) {
+    } catch {
       console.warn(`⚠️ [Auth] Email failed. Use OTP printed above.`);
     }
 
@@ -93,16 +109,21 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) throw new NotFoundException('User not found');
 
-    // ✅ التحقق من الحقول
-    if (user.resetCode !== otp) throw new BadRequestException('Invalid verification code');
-    if (!user.resetCodeExp || new Date() > user.resetCodeExp) throw new BadRequestException('Code expired');
+    if (user.resetCode !== otp)
+      throw new BadRequestException('Invalid verification code');
+    if (!user.resetCodeExp || new Date() > user.resetCodeExp)
+      throw new BadRequestException('Code expired');
 
     const salt = await bcrypt.genSalt();
     const hashedPassword = await bcrypt.hash(newPass, salt);
 
     await this.prisma.user.update({
       where: { id: user.id },
-      data: { password: hashedPassword, resetCode: null, resetCodeExp: null },
+      data: {
+        password: hashedPassword,
+        resetCode: null,
+        resetCodeExp: null,
+      },
     });
 
     console.log(`✅ [Auth] Password changed successfully.`);
@@ -110,10 +131,14 @@ export class AuthService {
   }
 
   private generateToken(user: any) {
-    const payload = { sub: user.id, email: user.email, tenantId: user.tenantId };
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      tenantId: user.tenantId,
+    };
     return {
       token: this.jwtService.sign(payload),
-      user: { id: user.id, name: user.name, email: user.email }
+      user: { id: user.id, name: user.name, email: user.email },
     };
   }
 }

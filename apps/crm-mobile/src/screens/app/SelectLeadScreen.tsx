@@ -8,7 +8,7 @@ import { Screen } from '../../components/layout/Screen';
 import { StickyFooter } from '../../components/layout/StickyFooter';
 import { Card } from '../../components/ui/Card';
 import { SearchField } from '../../components/ui/SearchField';
-import type { ScreenProps } from '../../screens/_types';
+import type { ScreenProps } from '../../navigation/types';
 import { useLeadsCtx } from '../../state/LeadsContext';
 
 export function SelectLeadScreen({ navigation, route }: ScreenProps<'SelectLead'>) {

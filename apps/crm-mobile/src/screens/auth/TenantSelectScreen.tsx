@@ -1,15 +1,13 @@
-// apps/crm-mobile/src/screens/auth/TenantSelectScreen.tsx
-
 import React, { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View, ActivityIndicator } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Banner } from '../../components/feedback/Banner';
 import { EmptyState } from '../../components/feedback/EmptyState';
 import { Skeleton } from '../../components/feedback/Skeleton';
 import { Screen } from '../../components/layout/Screen';
 import { Card } from '../../components/ui/Card';
+import type { ScreenProps } from '../../navigation/types';
 import { useAuth } from '../../state/AuthContext';
-import type { ScreenProps } from '../_types';
 
 export function TenantSelectScreen({}: ScreenProps<'TenantSelect'>) {
   const { state, actions } = useAuth();
@@ -24,7 +22,7 @@ export function TenantSelectScreen({}: ScreenProps<'TenantSelect'>) {
     setSelectingId(tenantId);
     try {
       await actions.selectTenant(tenantId);
-    } catch { // ✅ تم تجاهل المتغير
+    } catch {
       setSelectingId(null);
     }
   };
@@ -65,7 +63,6 @@ export function TenantSelectScreen({}: ScreenProps<'TenantSelect'>) {
               onPress={() => handleSelect(tenant.id)}
               disabled={!!selectingId}
             >
-              {/* ✅ الآن Card يقبل المصفوفة بدون مشاكل */}
               <Card style={[
                 styles.card, 
                 selectingId === tenant.id && styles.cardActive

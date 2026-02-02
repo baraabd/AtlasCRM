@@ -1,19 +1,18 @@
-import React, { useMemo, useState, useEffect } from 'react';
-import { StyleSheet, View, KeyboardAvoidingView, Platform, Text } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
 
-// ✅ استيراد المكون الجديد الموحد
 import { ExistingClientAlert } from '../../components/feedback/ExistingClientAlert';
 import { Screen } from '../../components/layout/Screen';
 import { StickyFooter } from '../../components/layout/StickyFooter';
 import { FormField } from '../../components/ui/FormField';
 import { SelectInput } from '../../components/ui/SelectInput';
+import type { ScreenProps } from '../../navigation/types';
 import { useLeadsCtx } from '../../state/LeadsContext';
 import { useMetadata } from '../../state/MetadataContext';
 import type { Lead } from '../../types/domain';
-import type { ScreenProps } from '../_types';
 
 export function NewLeadScreen({ navigation, route }: ScreenProps<'NewLead'>) {
-  const { create, findLeadsByPhone, leads, loading } = useLeadsCtx();
+  const { findLeadsByPhone, leads } = useLeadsCtx();
   const { lookups, isLoading: loadingMetadata } = useMetadata();
   const clientTypes = lookups['CLIENT_TYPE'] || [];
 
@@ -21,13 +20,10 @@ export function NewLeadScreen({ navigation, route }: ScreenProps<'NewLead'>) {
   const [phone, setPhone] = useState('');
   const [typeCode, setTypeCode] = useState('');
 
-  // 1. حالة لتخزين العميل المطابق بالاسم (للخطأ الأحمر)
   const [exactMatch, setExactMatch] = useState<Lead | null>(null);
   
-  // 2. حالة لتخزين العملاء المطابقين بالهاتف (للتحذير الأصفر)
   const [phoneDuplicates, setPhoneDuplicates] = useState<Lead[]>([]);
 
-  // 🧠 فحص الاسم عند مغادرة الحقل (OnBlur) - بدون نافذة منبثقة مزعجة
   const handleNameBlur = () => {
     const cleanName = name.trim();
     if (cleanName.length < 2) {
@@ -36,15 +32,13 @@ export function NewLeadScreen({ navigation, route }: ScreenProps<'NewLead'>) {
     }
 
     const found = leads.find(l => l.name.toLowerCase() === cleanName.toLowerCase());
-    setExactMatch(found || null); // حفظ النتيجة لعرض البطاقة الحمراء
+    setExactMatch(found || null);
   };
 
-  // 🧠 فحص الهاتف أثناء الكتابة (Debounce)
   useEffect(() => {
     const timer = setTimeout(() => {
       if (phone.length >= 8) {
         const found = findLeadsByPhone(phone);
-        // نستبعد العميل الذي وجدناه بالاسم (لكي لا يظهر تحذير الهاتف واسمه موجود أصلاً في الأحمر)
         const filtered = found.filter(l => l.id !== exactMatch?.id);
         setPhoneDuplicates(filtered);
       } else {
@@ -54,43 +48,37 @@ export function NewLeadScreen({ navigation, route }: ScreenProps<'NewLead'>) {
     return () => clearTimeout(timer);
   }, [phone, findLeadsByPhone, exactMatch]);
 
-  // عند تغيير الاسم، نخفي الخطأ القديم حتى يتم الفحص مرة أخرى
   const onNameChange = (text: string) => {
     setName(text);
     if (exactMatch) setExactMatch(null); 
   };
 
   const canSubmit = useMemo(() => {
-    // نمنع الحفظ إذا كان الاسم مكرراً
     if (exactMatch) return false;
     return name.trim().length >= 2 && typeCode !== '' && phone.trim().length >= 9;
   }, [name, typeCode, phone, exactMatch]);
 
-  async function onSubmit() {
-    if (!canSubmit || loading) return;
+  async function onNext() {
+    if (!canSubmit) return;
 
-    // فحص أخير قبل الإرسال
     const finalCheck = leads.find(l => l.name.toLowerCase() === name.trim().toLowerCase());
     if (finalCheck) {
       setExactMatch(finalCheck);
       return;
     }
 
-    try {
-      const created = await create({
+    navigation.navigate('LocationPicker', {
+      tempData: {
         name: name.trim(),
         businessType: typeCode,
         phones: [phone.trim()],
-      });
-      navigation.replace('SelectLead', { selectLeadId: created.id });
-    } catch { }
+      }
+    });
   }
 
   const getButtonLabel = () => {
-    if (loading) return 'Saving...';
-    // إذا كان هناك تحذير أصفر فقط
-    if (phoneDuplicates.length > 0 && !exactMatch) return 'Save as New Branch';
-    return 'Save Lead';
+    if (phoneDuplicates.length > 0 && !exactMatch) return 'Next: Set Location (New Branch)';
+    return 'Next: Set Location';
   };
 
   return (
@@ -103,8 +91,8 @@ export function NewLeadScreen({ navigation, route }: ScreenProps<'NewLead'>) {
              {
                label: getButtonLabel(),
                variant: 'primary',
-               disabled: !canSubmit || loading, 
-               onPress: onSubmit,
+               disabled: !canSubmit,
+               onPress: onNext,
              },
              {
                label: 'Cancel',
@@ -123,19 +111,16 @@ export function NewLeadScreen({ navigation, route }: ScreenProps<'NewLead'>) {
           <Text style={styles.sectionTitle}>Basic Information</Text>
           <Text style={styles.sectionSubtitle}>Please fill in the client details accurately.</Text>
 
-          {/* === حقل الاسم === */}
           <FormField
             label="Business / Lead Name *"
             placeholder="e.g. Al-Amal Furniture"
             value={name}
-            onChangeText={onNameChange} // استخدام الدالة المعدلة
-            onBlur={handleNameBlur} // الفحص الصامت عند المغادرة
+            onChangeText={onNameChange}
+            onBlur={handleNameBlur}
             icon="business-outline"
-            // نلون الحقل بالأحمر إذا وجدنا تطابقاً
-            error={exactMatch ? " " : undefined} // نرسل مسافة فارغة لتلوين الحقل فقط، الرسالة في البطاقة
+            error={exactMatch ? " " : undefined}
           />
 
-          {/* 🔴 البطاقة الحمراء (تظهر عند تكرار الاسم) */}
           {exactMatch && (
             <ExistingClientAlert
               type="danger"
@@ -144,7 +129,6 @@ export function NewLeadScreen({ navigation, route }: ScreenProps<'NewLead'>) {
             />
           )}
 
-          {/* === القائمة المنسدلة === */}
           <SelectInput
             label="Business Type *"
             placeholder={loadingMetadata ? "Loading..." : "Select Business Type"}
@@ -153,7 +137,6 @@ export function NewLeadScreen({ navigation, route }: ScreenProps<'NewLead'>) {
             onSelect={setTypeCode}
           />
 
-          {/* === حقل الهاتف === */}
           <FormField
             label="Primary Phone Number *"
             placeholder="05xxxxxxx"
@@ -164,7 +147,6 @@ export function NewLeadScreen({ navigation, route }: ScreenProps<'NewLead'>) {
             style={phoneDuplicates.length > 0 ? styles.warningInput : undefined}
           />
 
-          {/* 🟡 البطاقة الصفراء (تظهر عند تكرار الهاتف لاسم مختلف) */}
           {phoneDuplicates.length > 0 && (
             <ExistingClientAlert
               type="warning"

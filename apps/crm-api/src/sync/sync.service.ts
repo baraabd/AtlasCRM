@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -7,12 +8,9 @@ export class SyncService {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  // ✅ 1. تطبيق التغييرات القادمة من الموبايل (كان اسمها push)
-  // الترتيب الجديد: (tenantId, data)
   async applyChanges(tenantId: string, data: any) {
     this.logger.log(`📥 Syncing data for Tenant: ${tenantId}`);
 
-    // أ) مزامنة العملاء
     if (data.leads && Array.isArray(data.leads)) {
       for (const item of data.leads) {
         await this.prisma.client.upsert({
@@ -34,10 +32,8 @@ export class SyncService {
       }
     }
 
-    // ب) مزامنة الزيارات
     if (data.visits && Array.isArray(data.visits)) {
       for (const visit of data.visits) {
-        // تأكد من وجود العميل
         const clientExists = await this.prisma.client.findUnique({ where: { id: visit.leadId } });
         
         if (clientExists) {
@@ -52,7 +48,7 @@ export class SyncService {
               create: {
                 id: visit.id,
                 clientId: visit.leadId,
-                repId: visit.repId || 'UNKNOWN', // يجب إرساله من الموبايل
+                repId: visit.repId || 'UNKNOWN',
                 checkInTime: visit.startedAt ? new Date(visit.startedAt) : new Date(),
                 outcome: visit.outcome,
                 notes: visit.notes,
@@ -65,9 +61,7 @@ export class SyncService {
     return { success: true, syncedAt: new Date() };
   }
 
-  // ✅ 2. جلب التغييرات للموبايل (كان اسمها pull)
   async getChanges(tenantId: string, cursor?: string) {
-    // تحويل الـ cursor (النص) إلى تاريخ
     const lastSync = cursor ? new Date(cursor) : undefined;
 
     const whereCondition = lastSync 

@@ -7,7 +7,7 @@ import { Screen } from '../../components/layout/Screen';
 import { Card } from '../../components/ui/Card';
 import { OutlineButton } from '../../components/ui/OutlineButton';
 import { useVisitFlow } from '../../hooks/useVisitFlow';
-import type { ScreenProps } from '../../screens/_types';
+import type { ScreenProps } from '../../navigation/types';
 
 function formatSec(sec: number) {
   const m = Math.floor(sec / 60);

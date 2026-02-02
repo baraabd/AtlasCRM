@@ -1,22 +1,29 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+// apps/crm-mobile/src/state/LeadsContext.tsx
 
-import { listLeads, upsertLeadLocal } from '../infra/repos/leads.repo';
-import { runSyncWithRetry } from '../infra/sync/sync.service';
-import type { Lead } from '../types/domain';
+import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 
-// ✅ 1. تحديث تعريف الأنواع ليشمل الدالة الجديدة
+import { listLeads, upsertLeadLocal } from "../infra/repos/leads.repo";
+import { runSyncWithRetry } from "../infra/sync/sync.service";
+import type { Lead } from "../types/domain";
+
+export type CreateLeadInput = {
+  name: string;
+  businessType?: string;
+  phones?: string[];
+  location?: { longitude: number; latitude: number };
+};
+
 type LeadsContextType = {
   leads: Lead[];
-  create: (data: { name: string; businessType?: string; phones?: string[] }) => Promise<Lead>;
+  create: (data: CreateLeadInput) => Promise<Lead>;
   refreshLeads: () => Promise<void>;
-  // دالة البحث التي كانت مفقودة في التعريف
-  findLeadsByPhone: (phone: string) => Lead[]; 
-  checkDuplicate: (phone: string, name?: string) => Lead | undefined; 
+  findLeadsByPhone: (phone: string) => Lead[];
+  checkDuplicate: (phone: string, name?: string) => Lead | undefined;
   loading: boolean;
   error: string | null;
 };
 
-const LeadsCtx = createContext<LeadsContextType | null>(null);
+const leadsCtx = createContext<LeadsContextType | null>(null);
 
 export function LeadsProvider({ children }: { children: React.ReactNode }) {
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -28,8 +35,9 @@ export function LeadsProvider({ children }: { children: React.ReactNode }) {
     try {
       const data = await listLeads();
       setLeads(data);
+      setError(null);
     } catch {
-      setError('Failed to load leads');
+      setError("Failed to load leads");
     } finally {
       setLoading(false);
     }
@@ -39,65 +47,72 @@ export function LeadsProvider({ children }: { children: React.ReactNode }) {
     void refreshLeads();
   }, [refreshLeads]);
 
-  // دالة البحث عن العملاء بنفس الرقم (ترجع مصفوفة)
-  const findLeadsByPhone = useCallback((phone: string): Lead[] => {
-    const cleanPhone = phone.trim();
-    if (cleanPhone.length < 5) return []; 
+  const findLeadsByPhone = useCallback(
+    (phone: string): Lead[] => {
+      const cleanPhone = phone.trim();
+      if (cleanPhone.length < 5) return [];
 
-    return leads.filter(l => 
-      (l.phones && l.phones.includes(cleanPhone)) || l.phoneNumber === cleanPhone
-    );
-  }, [leads]);
+      return leads.filter(
+        l => (Array.isArray(l.phones) && l.phones.includes(cleanPhone)) || l.phoneNumber === cleanPhone
+      );
+    },
+    [leads]
+  );
 
-  // دالة التحقق من التكرار الدقيق (ترجع عميل واحد)
-  const checkDuplicate = useCallback((phone: string, name?: string): Lead | undefined => {
-    const cleanPhone = phone.trim();
-    const cleanName = name?.trim().toLowerCase();
-    return leads.find(l => {
-      const phoneMatch = (l.phones && l.phones.includes(cleanPhone)) || l.phoneNumber === cleanPhone;
-      const nameMatch = cleanName && l.name.toLowerCase() === cleanName;
-      return phoneMatch || nameMatch;
-    });
-  }, [leads]);
+  const checkDuplicate = useCallback(
+    (phone: string, name?: string): Lead | undefined => {
+      const cleanPhone = phone.trim();
+      const cleanName = name?.trim().toLowerCase();
 
-  const create = async (data: { name: string; businessType?: string; phones?: string[] }): Promise<Lead> => {
-    setLoading(true);
-    try {
-      const id = await upsertLeadLocal({
-        name: data.name,
-        businessType: data.businessType,
-        phones: data.phones
+      return leads.find(l => {
+        const phoneMatch = (Array.isArray(l.phones) && l.phones.includes(cleanPhone)) || l.phoneNumber === cleanPhone;
+        const nameMatch = Boolean(cleanName) && l.name.toLowerCase() === cleanName;
+        return phoneMatch || nameMatch;
       });
+    },
+    [leads]
+  );
 
-      await refreshLeads();
-      runSyncWithRetry(1).catch(() => console.log('Background sync queued.'));
+  const create = useCallback(
+    async (data: CreateLeadInput): Promise<Lead> => {
+      setLoading(true);
+      try {
+        const id = await upsertLeadLocal({
+          name: data.name,
+          businessType: data.businessType,
+          phones: data.phones,
+          location: data.location
+        });
 
-      return { 
-        id, 
-        name: data.name, 
-        businessType: data.businessType || null, 
-        phones: data.phones,
-        phoneNumber: data.phones?.[0]
-      } as Lead;
+        await refreshLeads();
+        runSyncWithRetry(1).catch(() => console.log("Background sync queued."));
 
-    } catch {
-      setError('Failed to create lead');
-      throw new Error('Create failed');
-    } finally {
-      setLoading(false);
-    }
-  };
+        return {
+          id,
+          name: data.name,
+          businessType: data.businessType || null,
+          phones: data.phones,
+          phoneNumber: data.phones?.[0]
+        } as Lead;
+      } catch {
+        setError("Failed to create lead");
+        throw new Error("Create failed");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [refreshLeads]
+  );
 
   return (
-    // ✅ تمرير الدالة الجديدة findLeadsByPhone هنا
-    <LeadsCtx.Provider value={{ leads, create, refreshLeads, checkDuplicate, findLeadsByPhone, loading, error }}>
+    <leadsCtx.Provider value={{ leads, create, refreshLeads, findLeadsByPhone, checkDuplicate, loading, error }}>
       {children}
-    </LeadsCtx.Provider>
+    </leadsCtx.Provider>
   );
 }
 
 export const useLeadsCtx = () => {
-  const ctx = useContext(LeadsCtx);
-  if (!ctx) throw new Error('useLeadsCtx outside provider');
+  const ctx = useContext(leadsCtx);
+  if (!ctx) throw new Error("useLeadsCtx outside provider");
   return ctx;
 };

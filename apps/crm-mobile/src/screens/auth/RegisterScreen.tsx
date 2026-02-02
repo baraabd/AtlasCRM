@@ -1,16 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
-  StyleSheet, Text, TextInput, View, TouchableOpacity, 
-  ScrollView, SafeAreaView, KeyboardAvoidingView, Platform 
+  KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, 
+  StyleSheet, Text, TextInput, TouchableOpacity, View 
 } from 'react-native';
 
 import { Banner } from '../../components/feedback/Banner';
 import { Checkbox } from '../../components/ui/Checkbox';
 import { PrimaryButton } from '../../components/ui/PrimaryButton';
 import { SocialBlock } from '../../components/ui/SocialBlock';
+import type { ScreenProps } from '../../navigation/types';
 import { useAuth } from '../../state/AuthContext';
-import type { ScreenProps } from '../_types';
 
 export function RegisterScreen({ navigation }: ScreenProps<'Register'>) {
   const { state, actions } = useAuth();
@@ -27,7 +27,7 @@ export function RegisterScreen({ navigation }: ScreenProps<'Register'>) {
 
   useEffect(() => {
     actions.clearError();
-  }, [actions]); // ✅ تمت إضافة actions هنا
+  }, [actions]);
 
   const canSubmit = fullName.length > 2 && email.length > 3 && password.length >= 6 && agreeTerms;
 
@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, 
     borderColor: '#E5E7EB', 
     borderRadius: 8, 
-    overflow: 'hidden',
+    overflow: 'hidden', 
     marginBottom: 4 
   },
   tab: { 

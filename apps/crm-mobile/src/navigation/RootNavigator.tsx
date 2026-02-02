@@ -1,15 +1,13 @@
+// apps/crm-mobile/src/navigation/RootNavigator.tsx
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React, { useEffect } from 'react';
-import { ActivityIndicator, View, StyleSheet } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
-
-// Auth Screens
-
-// App Screens
 import { CreateDealScreen } from '../screens/app/CreateDealScreen';
 import { DashboardScreen } from '../screens/app/DashboardScreen';
 import { DealDetailsScreen } from '../screens/app/DealDetailsScreen';
+import { LocationPickerScreen } from '../screens/app/LocationPickerScreen';
 import { NewLeadScreen } from '../screens/app/NewLeadScreen';
 import { ProfileScreen } from '../screens/app/ProfileScreen';
 import { SelectLeadScreen } from '../screens/app/SelectLeadScreen';
@@ -29,7 +27,7 @@ export function RootNavigator() {
   const { state } = useAuth();
 
   useEffect(() => {
-     // Splash logic here if needed
+    // Splash logic here if needed
   }, []);
 
   if (state.status === 'booting') {
@@ -57,6 +55,14 @@ export function RootNavigator() {
             <Stack.Screen name="Profile" component={ProfileScreen} />
             <Stack.Screen name="SelectLead" component={SelectLeadScreen} />
             <Stack.Screen name="NewLead" component={NewLeadScreen} />
+            <Stack.Screen
+              name="LocationPicker"
+              component={LocationPickerScreen}
+              options={{
+                headerShown: false,
+                animation: 'slide_from_right',
+              }}
+            />
             <Stack.Screen name="StartVisitProof" component={StartVisitProofScreen} />
             <Stack.Screen name="VisitLive" component={VisitLiveScreen} />
             <Stack.Screen name="CreateDeal" component={CreateDealScreen} />
@@ -69,9 +75,9 @@ export function RootNavigator() {
 }
 
 const styles = StyleSheet.create({
-  loadingContainer: { 
-    flex: 1, 
-    justifyContent: 'center', 
-    alignItems: 'center' 
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

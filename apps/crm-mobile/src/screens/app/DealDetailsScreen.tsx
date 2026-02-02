@@ -6,7 +6,7 @@ import { Screen } from '../../components/layout/Screen';
 import { Card } from '../../components/ui/Card';
 import { OutlineButton } from '../../components/ui/OutlineButton';
 import { useDeals } from '../../hooks/useDeals';
-import type { ScreenProps } from '../../screens/_types';
+import type { ScreenProps } from '../../navigation/types';
 
 export function DealDetailsScreen({ navigation, route }: ScreenProps<'DealDetails'>) {
   const { details, actions } = useDeals();
