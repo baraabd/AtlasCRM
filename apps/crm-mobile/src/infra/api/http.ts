@@ -1,57 +1,59 @@
-// apps/crm-mobile/src/infra/api/http.ts
-
 import axios from 'axios';
+import { Platform } from 'react-native';
 
-const MY_PC_IP = '192.168.68.57'; 
+import { ApiConfigurationError, resolveApiConfiguration } from './config';
+import { getApiErrorMessage } from './errors';
 
-const getBaseUrl = () => {
-  if (process.env.EXPO_PUBLIC_API_BASE_URL) return process.env.EXPO_PUBLIC_API_BASE_URL;
-  return `http://${MY_PC_IP}:3000`;
-};
+const isDevelopment = typeof __DEV__ !== 'undefined' && __DEV__;
+
+// Expo replaces only direct process.env.EXPO_PUBLIC_* references in the bundle.
+export const apiConfiguration = resolveApiConfiguration(
+  {
+    baseUrl: process.env.EXPO_PUBLIC_API_BASE_URL,
+    host: process.env.EXPO_PUBLIC_API_HOST,
+    port: process.env.EXPO_PUBLIC_API_PORT,
+    useEmulator: process.env.EXPO_PUBLIC_USE_EMULATOR,
+  },
+  Platform.OS,
+  isDevelopment,
+);
 
 export const http = axios.create({
-  baseURL: getBaseUrl(),
+  baseURL: apiConfiguration.baseUrl ?? undefined,
   timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
-    'Accept': 'application/json',
+    Accept: 'application/json',
   },
 });
 
 http.interceptors.request.use((config) => {
-  console.log(`📡 [HTTP] Request: ${config.method?.toUpperCase()} ${config.url}`);
-  if (!config.headers['Content-Type']) {
-      config.headers['Content-Type'] = 'application/json';
+  if (apiConfiguration.error) {
+    throw new ApiConfigurationError(apiConfiguration.error);
   }
   return config;
-}, (error) => Promise.reject(error));
+});
 
-// --- In-Memory Header Management ---
-
-export const setHttpAuthToken = (token: string | null) => {
+export function setHttpAuthToken(token: string | null) {
   if (token) {
-    http.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    http.defaults.headers.common.Authorization = `Bearer ${token}`;
   } else {
-    delete http.defaults.headers.common['Authorization'];
+    delete http.defaults.headers.common.Authorization;
   }
-  // ✅ تم حذف التعيين غير المستخدم (_currentToken)
-};
+}
 
-export const setHttpTenantId = (tenantId: string | null) => {
+export function setHttpTenantId(tenantId: string | null) {
   if (tenantId) {
     http.defaults.headers.common['x-tenant-id'] = tenantId;
   } else {
     delete http.defaults.headers.common['x-tenant-id'];
   }
-  // ✅ تم حذف التعيين غير المستخدم (_currentTenantId)
-};
+}
 
-http.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    if (error.response?.status === 401) {
-      console.warn('Unauthorized: Token expired or invalid.');
-    }
-    return Promise.reject(error);
-  }
-);
+export function formatApiError(error: unknown, fallback: string, unauthorizedMessage?: string) {
+  return getApiErrorMessage(error, fallback, {
+    baseUrl: apiConfiguration.baseUrl,
+    isDevelopment,
+    unauthorizedMessage,
+  });
+}

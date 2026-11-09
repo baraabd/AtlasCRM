@@ -2,7 +2,7 @@
   "name": "crm-mvp",
   "private": true,
   "engines": {
-    "node": ">=20.18.0"
+    "node": ">=20.19.4"
   },
   "workspaces": [
     "apps/*",
@@ -14,6 +14,7 @@
     "format": "prettier . --write",
     "typecheck": "tsc -b",
     "test": "npm run test -ws",
+    "test:mobile-api": "node scripts/test-mobile-api.cjs",
     "build": "npm run build -ws"
   },
   "devDependencies": {

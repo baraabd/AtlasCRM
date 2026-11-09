@@ -9,7 +9,7 @@
     "web": "expo start --web",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint .",
-    "test": "echo \"No tests specified for mobile\" && exit 0"
+    "test": "node --test test/*.test.cjs"
   },
   "dependencies": {
     "@maplibre/maplibre-react-native": "^10.4.2",

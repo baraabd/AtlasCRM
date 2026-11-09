@@ -91,6 +91,9 @@ export type User = {
   id: string;
   email: string;
   name: string;
+  role?: string;
+  tenantId?: string;
+  tenant?: Tenant;
   avatarUrl?: string;
 };
 
@@ -111,7 +114,8 @@ export type Company = {
 
 export type AuthResponse = {
   token: string;
-  user?: User;
+  user: User;
+  tenant?: Tenant;
 };
 
 export type ApiError = {

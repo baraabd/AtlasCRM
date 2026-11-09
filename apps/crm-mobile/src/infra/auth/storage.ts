@@ -1,5 +1,7 @@
 import * as SecureStore from 'expo-secure-store';
 
+import type { User } from '../../types/domain';
+
 const AUTH_KEYS = {
   TOKEN: 'auth_token',
   TENANT_ID: 'auth_tenant_id',
@@ -30,11 +32,11 @@ export async function clearTenantId(): Promise<void> {
 }
 
 // --- User Data ---
-export async function saveUserData(user: any): Promise<void> {
+export async function saveUserData(user: User): Promise<void> {
   await SecureStore.setItemAsync(AUTH_KEYS.USER_DATA, JSON.stringify(user));
 }
 
-export async function getUserData(): Promise<any | null> {
+export async function getUserData(): Promise<User | null> {
   const data = await SecureStore.getItemAsync(AUTH_KEYS.USER_DATA);
   return data ? JSON.parse(data) : null;
 }

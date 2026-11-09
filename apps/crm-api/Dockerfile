@@ -15,6 +15,7 @@ WORKDIR /repo
 
 # Bring installed deps
 COPY --from=deps /repo/node_modules ./node_modules
+COPY --from=deps /repo/apps/crm-api/node_modules ./apps/crm-api/node_modules
 
 # Copy full repo
 COPY . .
@@ -45,8 +46,15 @@ USER node
 
 # Copy only what we need at runtime
 COPY --from=prod-deps /repo/node_modules ./node_modules
-COPY --from=build /repo/apps/crm-api/dist ./dist
-COPY --from=build /repo/apps/crm-api/package.json ./package.json
+COPY --from=build /repo/node_modules/.prisma/client ./node_modules/.prisma/client
+COPY --from=build /repo/node_modules/@prisma/client ./node_modules/@prisma/client
+COPY --from=prod-deps /repo/apps/crm-api/node_modules ./apps/crm-api/node_modules
+COPY --from=build /repo/apps/crm-api/dist ./apps/crm-api/dist
+COPY --from=build /repo/apps/crm-api/package.json ./apps/crm-api/package.json
+
+WORKDIR /app/apps/crm-api
+
+RUN node -e "new (require('@prisma/client').PrismaClient)()"
 
 EXPOSE 3000
-CMD ["node", "dist/main"]
+CMD ["node", "dist/src/main.js"]

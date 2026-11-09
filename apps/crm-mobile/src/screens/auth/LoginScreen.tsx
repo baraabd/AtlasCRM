@@ -28,24 +28,15 @@ export function LoginScreen({ navigation }: ScreenProps<'Login'>) {
   const canSubmit = email.includes('@') && password.length >= 1;
 
   async function onLogin() {
-    console.log('🔘 [UI] Login button pressed');
-    
-    if (!canSubmit) {
-        console.warn('⚠️ [UI] Validation failed (Email/Pass empty)');
-        return;
-    }
-    
-    if (isLoading) return;
+    if (!canSubmit || isLoading) return;
 
     setIsLoading(true);
     actions.clearError(); 
     
     try {
-      console.log('📡 [UI] Calling actions.login...');
       await actions.login({ email: email.trim().toLowerCase(), password });
-      console.log('✅ [UI] Login action completed successfully');
-    } catch (e: any) {
-      console.error('❌ [UI] Login Error Caught in Component:', e.message); 
+    } catch {
+      // AuthContext displays a network, server, or credential error in the banner.
     } finally {
       setIsLoading(false);
     }

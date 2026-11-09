@@ -1,11 +1,97 @@
-name: E2E (placeholder)
+name: Auth and database integration
 
 on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: auth-integration-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  e2e:
+  auth-mobile-postgres:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: crm
+          POSTGRES_PASSWORD: ci_only_password
+          POSTGRES_DB: atlascrm_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U crm -d atlascrm_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://crm:ci_only_password@127.0.0.1:5432/atlascrm_test?schema=public
+      TEST_DATABASE_URL: postgresql://crm:ci_only_password@127.0.0.1:5432/atlascrm_test?schema=public
+      JWT_SECRET: ci-only-atlascrm-auth-integration-secret-not-for-deployment
+      API_PORT: 3300
+      TEST_API_BASE_URL: http://127.0.0.1:3300
+      TEST_API_EMAIL: admin@alpha.com
+      TEST_API_PASSWORD: '123456'
+      TEST_EXPECTED_SERVICE_COUNT: '4'
     steps:
       - uses: actions/checkout@v4
-      - run: echo "Add API e2e with Postgres service after scaffolding Nest/Prisma"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - run: npm run prisma:generate --workspace=crm-api
+      - name: API integration with isolated PostgreSQL schema
+        run: npm run test:e2e --workspace=crm-api -- --runInBand
+      - name: Prepare disposable database for the mobile HTTP integration
+        working-directory: apps/crm-api
+        run: npx prisma db push --schema=prisma/schema.prisma
+      - name: Seed local fixtures twice without duplicating tenants or services
+        run: |
+          npm run seed:local --workspace=crm-api
+          npm run seed:local --workspace=crm-api
+      - run: npm run build --workspace=crm-api
+      - name: Actual mobile HTTP modules against the running API and PostgreSQL
+        shell: bash
+        run: |
+          node apps/crm-api/dist/src/main.js > "$RUNNER_TEMP/atlascrm-api.log" 2>&1 &
+          api_pid=$!
+          trap 'kill "$api_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:3300/health > /dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          npm run test:mobile-api
+      - name: Build the API runtime image
+        run: docker build -t atlascrm-api:auth-test -f apps/crm-api/Dockerfile .
+      - name: Verify the packaged API against PostgreSQL with the mobile HTTP modules
+        shell: bash
+        run: |
+          docker run --detach --name atlascrm-api-auth-test --network host \
+            -e NODE_ENV=production -e DATABASE_URL -e JWT_SECRET -e API_PORT=3301 \
+            atlascrm-api:auth-test
+          trap 'docker logs atlascrm-api-auth-test > "$RUNNER_TEMP/atlascrm-api-image.log" 2>&1; docker rm -f atlascrm-api-auth-test > /dev/null' EXIT
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:3301/health > /dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          TEST_API_BASE_URL=http://127.0.0.1:3301 npm run test:mobile-api
+      - name: API diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: atlascrm-api-integration-log
+          path: ${{ runner.temp }}/atlascrm-api*.log
+          if-no-files-found: ignore

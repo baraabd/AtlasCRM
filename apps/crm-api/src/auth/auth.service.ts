@@ -5,12 +5,14 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import * as nodemailer from 'nodemailer';
 import { v4 as uuidv4 } from 'uuid';
 
 import { PrismaService } from '../prisma/prisma.service';
 
+import { publicUser, publicUserSelect } from './auth-user';
 import { RegisterDto } from './dto/register.dto';
 
 @Injectable()
@@ -29,8 +31,12 @@ export class AuthService {
   ) {}
 
   async login(email: string, pass: string) {
-    console.log(`🔍 [Auth] Login Request: ${email}`);
-    const user = await this.prisma.user.findUnique({ where: { email } });
+    const user = await this.prisma.user.findFirst({
+      where: {
+        email: { equals: email.trim().toLowerCase(), mode: 'insensitive' },
+      },
+      select: { ...publicUserSelect, password: true },
+    });
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
     const isMatch = await bcrypt.compare(pass, user.password);
@@ -40,9 +46,9 @@ export class AuthService {
   }
 
   async register(data: RegisterDto) {
-    console.log(`📝 [Auth] Register Request: ${data.email}`);
-    const existing = await this.prisma.user.findUnique({
-      where: { email: data.email },
+    const email = data.email.trim().toLowerCase();
+    const existing = await this.prisma.user.findFirst({
+      where: { email: { equals: email, mode: 'insensitive' } },
     });
     if (existing) throw new BadRequestException('Email already exists');
 
@@ -51,26 +57,22 @@ export class AuthService {
     const tenantId = uuidv4();
     const userId = uuidv4();
 
-    try {
-      return await this.prisma.$transaction(async (tx) => {
-        const tenant = await tx.tenant.create({
-          data: { id: tenantId, name: `${data.fullName}'s Organization` },
-        });
-        const user = await tx.user.create({
-          data: {
-            id: userId,
-            email: data.email,
-            password: hashedPassword,
-            name: data.fullName,
-            tenantId: tenant.id,
-          },
-        });
-        return this.generateToken(user);
+    return this.prisma.$transaction(async (tx) => {
+      const tenant = await tx.tenant.create({
+        data: { id: tenantId, name: `${data.fullName}'s Organization` },
       });
-    } catch {
-      console.error('DB Error: Registration failed');
-      throw new BadRequestException('Registration failed');
-    }
+      const user = await tx.user.create({
+        data: {
+          id: userId,
+          email,
+          password: hashedPassword,
+          name: data.fullName,
+          tenantId: tenant.id,
+        },
+        select: publicUserSelect,
+      });
+      return this.generateToken(user);
+    });
   }
 
   async forgotPassword(email: string) {
@@ -130,7 +132,9 @@ export class AuthService {
     return { message: 'Password reset successfully' };
   }
 
-  private generateToken(user: any) {
+  private generateToken(
+    user: Prisma.UserGetPayload<{ select: typeof publicUserSelect }>,
+  ) {
     const payload = {
       sub: user.id,
       email: user.email,
@@ -138,7 +142,8 @@ export class AuthService {
     };
     return {
       token: this.jwtService.sign(payload),
-      user: { id: user.id, name: user.name, email: user.email },
+      user: publicUser(user),
+      tenant: user.tenant,
     };
   }
 }
