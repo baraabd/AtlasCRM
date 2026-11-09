@@ -1,32 +1,20 @@
-import { ValidationPipe } from '@nestjs/common';
+import { networkInterfaces } from 'node:os';
+
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { json, urlencoded } from 'express';
 
 import { AppModule } from './app.module';
-import { PrismaExceptionFilter } from './prisma/prisma-exception.filter';
+import { configureApplication } from './application';
+import { getApiPort, getDatabaseUrl, getJwtSecret } from './config/environment';
 
 async function bootstrap() {
+  // Validate once before opening listeners or constructing database connections.
+  getDatabaseUrl();
+  getJwtSecret();
+  const port = getApiPort();
   const app = await NestFactory.create(AppModule);
-
-  app.enableCors({
-    origin: '*',
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    credentials: true,
-  });
-
-  app.use(json({ limit: '50mb' }));
-  app.use(urlencoded({ extended: true, limit: '50mb' }));
-
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-    }),
-  );
+  configureApplication(app);
   app.enableShutdownHooks();
-  app.useGlobalFilters(new PrismaExceptionFilter());
 
   const config = new DocumentBuilder()
     .setTitle('CRM API')
@@ -36,17 +24,15 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
 
-  const port = Number(process.env.API_PORT ?? 3000);
-  
   await app.listen(port, '0.0.0.0');
 
   console.log(`🚀 Server is running!`);
   console.log(`👉 Local:   http://localhost:${port}/api`);
-  
-  const { networkInterfaces } = require('os');
+  console.log(`👉 Health:  http://localhost:${port}/health`);
+
   const nets = networkInterfaces();
   for (const name of Object.keys(nets)) {
-    for (const net of nets[name]) {
+    for (const net of nets[name] ?? []) {
       if (net.family === 'IPv4' && !net.internal) {
         console.log(`👉 Network: http://${net.address}:${port}/api`);
       }
@@ -54,4 +40,7 @@ async function bootstrap() {
   }
 }
 
-void bootstrap();
+void bootstrap().catch((error: unknown) => {
+  console.error(error instanceof Error ? error.message : 'API startup failed');
+  process.exitCode = 1;
+});
